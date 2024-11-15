@@ -14,7 +14,7 @@ public class Shake : MonoBehaviour
     private int NumShakes = 0;
     private float PreviousZ = 0;
 
-   
+    public DialogueManager _DialogueManager;
 
     // Start is called before the first frame update
     void Start()
@@ -42,6 +42,8 @@ public class Shake : MonoBehaviour
         IsShaking = true;
         ShakeDirection = Direction.Right;
         NumShakes = 0;
+
+        _DialogueManager.SetShakeText();
     }
 
     void StopShake()
