@@ -5,10 +5,12 @@
 
 import { useEffect, useState } from "react";
 // IMP START - Quick Start
-import { CHAIN_NAMESPACES, IProvider, WALLET_ADAPTERS, WEB3AUTH_NETWORK } from "@web3auth/base";
+import { CHAIN_NAMESPACES, IProvider, UX_MODE, WALLET_ADAPTERS, WEB3AUTH_NETWORK } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
-import { AuthAdapter } from "@web3auth/auth-adapter";
+import { AuthAdapter, WHITE_LABEL_THEME, WhiteLabelData } from "@web3auth/auth-adapter";
+import { WalletServicesPlugin } from "@web3auth/wallet-services-plugin";
+
 // IMP END - Quick Start
 
 // IMP START - Blockchain Calls
@@ -18,21 +20,19 @@ import RPC from "./ethersRPC";
 // IMP END - Blockchain Calls
 
 // IMP START - Dashboard Registration
-const clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ"; // get from https://dashboard.web3auth.io
+const clientId = "BFIqnq2jKx4HB0PscxrJW8f_4C287cqgBvbb7ZL2v4YVe3yuAqxFQkuKp6-JuFN0wrZaIrsAEziQaDQq47PHAs8"; // get from https://dashboard.web3auth.io
 // IMP END - Dashboard Registration
 
 // IMP START - Chain Config
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
-  chainId: "0xaa36a7",
-  rpcTarget: "https://rpc.ankr.com/eth_sepolia",
-  // Avoid using public rpcTarget in production.
-  // Use services like Infura, Quicknode etc
-  displayName: "Ethereum Sepolia Testnet",
-  blockExplorerUrl: "https://sepolia.etherscan.io",
+  chainId: "0x2105",
+  rpcTarget: "https://rpc.ankr.com/base",
+  displayName: "Base",
+  blockExplorerUrl: "https://basescan.org/",
   ticker: "ETH",
   tickerName: "Ethereum",
-  logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+  logo: "https://icons.llamao.fi/icons/chains/rsz_ethereum.jpg",
 };
 // IMP END - Chain Config
 
@@ -41,12 +41,34 @@ const privateKeyProvider = new EthereumPrivateKeyProvider({ config: { chainConfi
 
 const web3auth = new Web3AuthNoModal({
   clientId,
-  web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
+  web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
   privateKeyProvider,
 });
+const walletServicesPlugin = new WalletServicesPlugin();
 
-const authAdapter = new AuthAdapter();
+const authAdapter = new AuthAdapter({
+  adapterSettings: {
+    clientId, //Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
+    network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET, // Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
+    uxMode: UX_MODE.REDIRECT,
+    whiteLabel: {
+      appName: "W3A Heroes",
+      appUrl: "https://web3auth.io",
+      logoLight: "https://web3auth.io/images/web3auth-logo.svg",
+      logoDark: "https://web3auth.io/images/web3auth-logo---Dark.svg",
+      defaultLanguage: "en", // en, de, ja, ko, zh, es, fr, pt, nl, tr
+      mode: "dark", // whether to enable dark mode. defaultValue: auto
+      theme: {
+        primary: "#00D1B2",
+      } as WHITE_LABEL_THEME,
+      useLogoLoader: true,
+    } as WhiteLabelData,
+  },
+  privateKeyProvider,
+});
 web3auth.configureAdapter(authAdapter);
+
+web3auth.addPlugin(walletServicesPlugin);
 // IMP END - SDK Initialization
 
 function App() {
@@ -63,6 +85,7 @@ function App() {
 
         if (web3auth.connected) {
           setLoggedIn(true);
+          // Add the plugin to web3auth
         }
       } catch (error) {
         console.error(error);
@@ -71,6 +94,17 @@ function App() {
 
     init();
   }, []);
+
+  const showCheckout = () => {
+    console.log(walletServicesPlugin.status);
+    if (walletServicesPlugin.status === "connected") {
+      walletServicesPlugin.showCheckout({
+        show: true,
+        fiatList: ["USD"],
+        tokenList: ["USDC"],
+      });
+    }
+  };
 
   const login = async () => {
     // IMP START - Login
@@ -174,6 +208,11 @@ function App() {
         <div>
           <button onClick={sendTransaction} className="card">
             Send Transaction
+          </button>
+        </div>
+        <div>
+          <button onClick={showCheckout} className="card">
+            Onramp
           </button>
         </div>
         <div>
