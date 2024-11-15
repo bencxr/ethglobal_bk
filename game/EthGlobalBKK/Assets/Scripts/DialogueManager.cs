@@ -10,9 +10,11 @@ public class DialogueManager : MonoBehaviour
     Button NextButton;
 
     public bool IsShakingEgg = false;
-    public bool IsEggReadyToBreak = false;
     int OnShakePhase = 0;
     string[] ShakeText = new string[] {"Poke the egg!", "Keep poking!!", "poke poke...", "poke poke poke...", "poke poke poke poke...", "Almost there...!"};
+
+
+    public GameController _GameController;
 
     // Start is called before the first frame update
     void Start()
@@ -48,9 +50,14 @@ public class DialogueManager : MonoBehaviour
         TextBox.text = ShakeText[Mathf.Min(OnShakePhase, ShakeText.Length - 1)];
         OnShakePhase++;
 
-        if (OnShakePhase >= ShakeText.Length)
+        if (OnShakePhase > ShakeText.Length)
         {
-            IsEggReadyToBreak = true;
+            _GameController.HatchElephant();
         }
+    }
+
+    public void HatchElephantText()
+    {
+        TextBox.text = "A baby elephant hatched!";
     }
 }
