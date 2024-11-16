@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using System.Runtime.InteropServices;
+using UnityEngine.SceneManagement;
 
 [System.Serializable]
 public class LoginResponse
@@ -110,5 +111,10 @@ public class GameController : MonoBehaviour
         Debug.Log($"User logged in: {LoginSession.user.name} with address: {LoginSession.user.address}");
 
         PromptPlantation();
+    }
+
+    public void GoToPlantation()
+    {
+        SceneManager.LoadScene (sceneName:"Plantation");
     }
 }
