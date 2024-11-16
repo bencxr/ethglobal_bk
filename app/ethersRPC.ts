@@ -208,6 +208,173 @@ const withdrawFromAave = async (provider: IProvider, amount: string): Promise<an
   }
 };
 
+// Add these interfaces
+interface AaveEvent {
+  amount: bigint;
+  timestamp: number;
+}
+
+interface AavePosition {
+  interestIncome: string;
+  principalAmount: string;
+  currentBalance: string;
+}
+
+// Add this function to get all supply/withdraw events and calculate interest
+const getAavePosition = async (provider: IProvider): Promise<AavePosition | null> => {
+  try {
+    const ethersProvider = new ethers.BrowserProvider(provider);
+    const signer = await ethersProvider.getSigner();
+    const userAddress = await signer.getAddress();
+
+    // AToken contract for events and current balance
+    const aUsdcContract = new ethers.Contract(
+      "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB", // aUSDC on Base
+      [
+        "function scaledBalanceOf(address user) external view returns (uint256)",
+        "function POOL() external view returns (address)",
+        "function UNDERLYING_ASSET_ADDRESS() external view returns (address)",
+        "function balanceOf(address user) external view returns (uint256)",
+      ],
+      signer
+    );
+
+    // Get current aUSDC balance directly
+    const currentBalance = await aUsdcContract.balanceOf(userAddress);
+
+    // Get scaled balance for principal calculation
+    const scaledBalance = await aUsdcContract.scaledBalanceOf(userAddress);
+
+    // Principal is the scaled balance (original deposit amount)
+    const principalAmount = scaledBalance;
+
+    // Interest income is the difference between current balance and principal
+    const interestIncome = currentBalance - principalAmount;
+
+    // Format with 6 decimals (USDC standard)
+    return {
+      interestIncome: ethers.formatUnits(interestIncome, 6),
+      principalAmount: ethers.formatUnits(principalAmount, 6),
+      currentBalance: ethers.formatUnits(currentBalance, 6),
+    };
+  } catch (error) {
+    console.error("Error calculating Aave position:", error);
+    return null;
+  }
+};
+
+interface AaveTransaction {
+  type: "deposit" | "withdrawal";
+  amount: string;
+  timestamp: string;
+  blockNumber: number;
+}
+
+const getAaveTransactionHistory = async (
+  provider: IProvider
+): Promise<{
+  transactions: AaveTransaction[];
+  totalDeposited: string;
+  totalWithdrawn: string;
+  currentBalance: string;
+  totalIncome: string;
+} | null> => {
+  try {
+    const ethersProvider = new ethers.BrowserProvider(provider);
+    const signer = await ethersProvider.getSigner();
+    const userAddress = await signer.getAddress();
+
+    const poolContract = new ethers.Contract(
+      AAVE_POOL_ADDRESS,
+      [
+        "event Supply(address indexed reserve, address user, address indexed onBehalfOf, uint256 amount, uint16 referralCode)",
+        "event Withdraw(address indexed reserve, address indexed user, address indexed to, uint256 amount)",
+      ],
+      signer
+    );
+
+    const currentBlock = await ethersProvider.getBlockNumber();
+    const fromBlock = currentBlock - 100000;
+
+    const depositEvents = await poolContract.queryFilter(
+      poolContract.filters.Supply(
+        USDC_ADDRESS, // reserve (indexed)
+        null, // user (not indexed)
+        userAddress // onBehalfOf (indexed)
+      ),
+      fromBlock
+    );
+
+    const withdrawEvents = await poolContract.queryFilter(
+      poolContract.filters.Withdraw(
+        USDC_ADDRESS, // reserve (indexed)
+        userAddress, // user (indexed)
+        userAddress // to (indexed)
+      ),
+      fromBlock
+    );
+
+    const transactions: AaveTransaction[] = [];
+    let totalDeposited = BigInt(0);
+    let totalWithdrawn = BigInt(0);
+
+    for (const event of depositEvents) {
+      const block = await event.getBlock();
+      console.log("Raw deposit event:", event);
+
+      const amount = event.args[3]; // amount is the 4th parameter
+      totalDeposited += amount;
+
+      transactions.push({
+        type: "deposit",
+        amount: ethers.formatUnits(amount, 6),
+        timestamp: new Date(Number(block.timestamp) * 1000).toLocaleString(),
+        blockNumber: event.blockNumber,
+      });
+    }
+
+    for (const event of withdrawEvents) {
+      const block = await event.getBlock();
+      console.log("Raw withdraw event:", event);
+
+      const amount = event.args[3]; // amount is the 4th parameter
+      totalWithdrawn += amount;
+
+      transactions.push({
+        type: "withdrawal",
+        amount: ethers.formatUnits(amount, 6),
+        timestamp: new Date(Number(block.timestamp) * 1000).toLocaleString(),
+        blockNumber: event.blockNumber,
+      });
+    }
+
+    // Sort by block number (most recent first)
+    transactions.sort((a, b) => b.blockNumber - a.blockNumber);
+
+    // Get current balance
+    const aUsdcContract = new ethers.Contract(
+      AUSDC_ADDRESS,
+      ["function balanceOf(address account) external view returns (uint256)"],
+      signer
+    );
+    const currentBalance = await aUsdcContract.balanceOf(userAddress);
+
+    // Calculate total income
+    const totalIncome = currentBalance + totalWithdrawn - totalDeposited;
+
+    return {
+      transactions,
+      totalDeposited: ethers.formatUnits(totalDeposited, 6),
+      totalWithdrawn: ethers.formatUnits(totalWithdrawn, 6),
+      currentBalance: ethers.formatUnits(currentBalance, 6),
+      totalIncome: ethers.formatUnits(totalIncome, 6),
+    };
+  } catch (error) {
+    console.error("Error getting Aave transaction history:", error);
+    throw error; // This will help us see the actual error
+  }
+};
+
 export default {
   getChainId,
   getAccounts,
@@ -218,4 +385,6 @@ export default {
   depositUsdc,
   getAaveUsdcBalance,
   withdrawFromAave,
+  getAavePosition,
+  getAaveTransactionHistory,
 };

@@ -134,10 +134,10 @@ function App() {
   const sendGameState = async (eventName: string) => {
     const state = await getState();
 
-    console.log("Sending Game State");
-    console.log(state);
+    // console.log("Sending Game State");
+    // console.log(state);
     sendMessage("GameController", eventName, JSON.stringify(state));
-  }
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -162,17 +162,28 @@ function App() {
   /**
    * methods that deal with game integration
    */
-  addEventListener("PromptLogin", () => { login(); });
-  addEventListener("PromptFunding", () => { fundWalletWithUSDC(); });
-  addEventListener("DepositAll", () => { depositUsdc(); });
-  addEventListener("GetState", () => { sendGameState("UpdateState"); });
-  addEventListener("StoreBlob", useCallback((blob) => {
-    storeGameBlob(blob);
-  }, []));
+  addEventListener("PromptLogin", () => {
+    login();
+  });
+  addEventListener("PromptFunding", () => {
+    fundWalletWithUSDC();
+  });
+  addEventListener("DepositAll", () => {
+    depositUsdc();
+  });
+  addEventListener("GetState", () => {
+    sendGameState("UpdateState");
+  });
+  addEventListener(
+    "StoreBlob",
+    useCallback((blob) => {
+      storeGameBlob(blob);
+    }, [])
+  );
 
   const storeGameBlob = async (blob: string) => {
     localStorage.setItem("gameBlob", blob);
-  }
+  };
 
   const getState = async () => {
     let state = {
@@ -181,13 +192,13 @@ function App() {
       user: {
         name: "",
         email: "",
-        address: "0x"
+        address: "0x",
       },
       balances: {
         base: 0,
         usdc: 0,
-        ausdc: 0
-      }
+        ausdc: 0,
+      },
     };
     state.loggedIn = loggedIn;
     if (!loggedIn) {
@@ -208,7 +219,7 @@ function App() {
     state.balances.ausdc = Number(await RPC.getAaveUsdcBalance(provider));
 
     return state;
-  }
+  };
   ////// END GAME MESSAGING INTEGRATION //////
 
   const login = async () => {
@@ -257,7 +268,7 @@ function App() {
       return;
     }
     if (!amountToDeposit || isNaN(Number(amountToDeposit))) {
-      amountToDeposit = await RPC.getUsdcBalance(provider) || "0";
+      amountToDeposit = (await RPC.getUsdcBalance(provider)) || "0";
     }
     const receipt = await RPC.depositUsdc(provider, amountToDeposit);
     uiConsole("Deposit result:", receipt);
@@ -405,6 +416,68 @@ function App() {
     }
   };
 
+  const getInterestIncome = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const position = await RPC.getAavePosition(provider);
+
+      if (position) {
+        uiConsole({
+          "Interest Income (USDC)": position.interestIncome,
+          "Principal Amount (USDC)": position.principalAmount,
+          "Current Balance (aUSDC)": position.currentBalance,
+        });
+      } else {
+        uiConsole("No Aave position found");
+      }
+    } catch (error) {
+      console.error("Error getting interest income:", error);
+      uiConsole("Error getting interest income:", error.message);
+    }
+  };
+
+  const getTransactionHistory = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const history = await RPC.getAaveTransactionHistory(provider);
+
+      if (history && history.transactions.length > 0) {
+        // Format the transaction list for display
+        const transactionList = history.transactions.map((tx) => ({
+          Type: tx.type,
+          Amount: `${tx.amount} USDC`,
+          Date: tx.timestamp,
+        }));
+
+        uiConsole({
+          "Transaction History": transactionList,
+          Summary: {
+            "Total Deposited": `${history.totalDeposited} USDC`,
+            "Total Withdrawn": `${history.totalWithdrawn} USDC`,
+            "Current Balance": `${history.currentBalance} USDC`,
+            "Total Income": `${history.totalIncome} USDC`,
+          },
+        });
+      } else if (history) {
+        uiConsole({
+          Message: "No transactions found in recent history",
+          "Current Balance": `${history.currentBalance} USDC`,
+        });
+      } else {
+        uiConsole("Error retrieving transaction history");
+      }
+    } catch (error) {
+      console.error("Error getting transaction history:", error);
+      uiConsole("Error details:", error.message);
+    }
+  };
+
   const loggedInView = (
     <>
       <div className="flex-container">
@@ -515,6 +588,16 @@ function App() {
             Retrieve Game Blob
           </button>
         </div>
+        <div>
+          <button onClick={getInterestIncome} className="card">
+            Get Interest Income
+          </button>
+        </div>
+        <div>
+          <button onClick={getTransactionHistory} className="card">
+            View Transaction History
+          </button>
+        </div>
       </div>
     </>
   );
@@ -527,10 +610,13 @@ function App() {
 
   return (
     <div className="container">
-      <Unity unityProvider={unityProvider} style={{
-        width: '300px',
-        height: '650px',
-      }} />
+      <Unity
+        unityProvider={unityProvider}
+        style={{
+          width: "300px",
+          height: "650px",
+        }}
+      />
       <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
       <div id="console" style={{ whiteSpace: "pre-line" }}>
         <p style={{ whiteSpace: "pre-line" }}></p>
