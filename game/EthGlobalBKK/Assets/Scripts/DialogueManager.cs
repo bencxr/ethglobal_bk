@@ -13,6 +13,10 @@ public class DialogueManager : MonoBehaviour
     VisualElement ElephantContainer;
     Label ElephantText;
     Button ElephantButton;
+
+    VisualElement MonkeyContainer;
+    Label MonkeyText;
+    Button MonkeyButton;
     
 
     public bool IsShakingEgg = false;
@@ -37,8 +41,13 @@ public class DialogueManager : MonoBehaviour
         ElephantButton = Root.Q<Button>("ElephantButton");
         ElephantContainer = Root.Q<VisualElement>("Elephant");
 
+        MonkeyText = Root.Q<Label>("MonkeyText");
+        MonkeyButton = Root.Q<Button>("MonkeyButton");
+        MonkeyContainer = Root.Q<VisualElement>("Monkey");
+
         NextButton.RegisterCallback<ClickEvent>(NextButtonClicked);
         ElephantButton.RegisterCallback<ClickEvent>(NextElephantButtonClicked);
+        MonkeyButton.RegisterCallback<ClickEvent>(NextMonkeyButtonClicked);
     }
 
     // Update is called once per frame
@@ -79,6 +88,11 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
+    void NextMonkeyButtonClicked(ClickEvent e)
+    {
+        _GameController.PromptUserWelcome();
+    }
+
     public void SetShakeText()
     {
         TextBox.text = ShakeText[Mathf.Min(OnShakePhase, ShakeText.Length - 1)];
@@ -100,6 +114,7 @@ public class DialogueManager : MonoBehaviour
         TextBox.text = text;
         TextContainer.style.display = DisplayStyle.Flex;
         ElephantContainer.style.display = DisplayStyle.None;
+        MonkeyContainer.style.display = DisplayStyle.None;
     }
 
     public void SetElephantText(string text)
@@ -107,6 +122,22 @@ public class DialogueManager : MonoBehaviour
         ElephantText.text = text;
         TextContainer.style.display = DisplayStyle.None;
         ElephantContainer.style.display = DisplayStyle.Flex;
+        MonkeyContainer.style.display = DisplayStyle.None;
+    }
+
+    public void SetMonkeyText(string text)
+    {
+        MonkeyText.text = text;
+        TextContainer.style.display = DisplayStyle.None;
+        ElephantContainer.style.display = DisplayStyle.None;
+        MonkeyContainer.style.display = DisplayStyle.Flex;
+    }
+
+    public void HideDialogue()
+    {
+        TextContainer.style.display = DisplayStyle.None;
+        ElephantContainer.style.display = DisplayStyle.None;
+        MonkeyContainer.style.display = DisplayStyle.None;
     }
 
     public void PromptLogin()
