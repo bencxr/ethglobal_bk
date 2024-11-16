@@ -411,6 +411,38 @@ const checkUsdcAllowance = async (provider: IProvider): Promise<string> => {
   }
 };
 
+const sendUsdcTransaction = async (provider: IProvider, toAddress: string, amount: string): Promise<any> => {
+  try {
+    const ethersProvider = new ethers.BrowserProvider(provider);
+    const signer = await ethersProvider.getSigner();
+    const userAddress = await signer.getAddress();
+
+    const usdcContract = new ethers.Contract(
+      USDC_ADDRESS,
+      ["function transfer(address to, uint256 amount) external returns (bool)"],
+      signer
+    );
+
+    const transferAmount = ethers.parseUnits(amount, 6); // USDC has 6 decimals
+
+    const feeData = await ethersProvider.getFeeData();
+    if (!feeData.gasPrice) throw new Error("Could not get gas price");
+
+    const txParams = {
+      from: userAddress,
+      gasPrice: feeData.gasPrice,
+      gasLimit: 100000n,
+      value: 0n,
+      nonce: await ethersProvider.getTransactionCount(userAddress),
+    };
+
+    const tx = await usdcContract.transfer(toAddress, transferAmount, txParams);
+    return await tx.wait();
+  } catch (error) {
+    return error;
+  }
+};
+
 export default {
   getChainId,
   getAccounts,
@@ -423,5 +455,6 @@ export default {
   getAaveUsdcBalance,
   withdrawFromAave,
   getAavePosition,
-  getAaveTransactionHistory,checkUsdcAllowance,
+  getAaveTransactionHistory, checkUsdcAllowance,
+  sendUsdcTransaction,
 };

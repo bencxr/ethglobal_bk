@@ -213,6 +213,8 @@ function App() {
   const login = async () => {
     if (loggedIn) return;
     // IMP START - Login
+    if (web3auth.connected) return;
+
     const web3authProvider = await web3auth.connectTo(WALLET_ADAPTERS.AUTH, {
       loginProvider: "google",
     });
@@ -523,6 +525,23 @@ function App() {
     }
   };
 
+  const sendUSDCTransaction = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const toAddress = "0xF15A780336068B58997bFd4640F008349c27636C"; // Example address
+      const amount = "12"; // Send 0.1 USDC
+
+      const receipt = await RPC.sendUsdcTransaction(provider, toAddress, amount);
+      uiConsole("USDC Transaction sent:", receipt);
+    } catch (error) {
+      console.error("Error sending USDC:", error);
+      uiConsole("Error sending USDC:", error);
+    }
+  };
+
   const loggedInView = (
     <>
       <div className="flex-container">
@@ -651,6 +670,11 @@ function App() {
         <div>
           <button onClick={checkAllowance} className="card">
             Check USDC Allowance
+          </button>
+        </div>
+        <div>
+          <button onClick={sendUSDCTransaction} className="card">
+            Send USDC Transaction
           </button>
         </div>
       </div>
