@@ -387,7 +387,8 @@ function App() {
       }
       uiConsole("Full error:", error);
     }
-    
+  }
+
   const fundWalletWithUSDC = async () => {
     document.getElementById("cbonramp-button-container").children[0].click()
   };
