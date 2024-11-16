@@ -125,7 +125,7 @@ const getUsdcBalance = async (provider: IProvider): Promise<string | null> => {
   }
 };
 
-const depositUsdc = async (provider: IProvider): Promise<any> => {
+const depositUsdc = async (provider: IProvider, amount: string): Promise<any> => {
   try {
     const ethersProvider = new ethers.BrowserProvider(provider);
     const signer = await ethersProvider.getSigner();
@@ -135,7 +135,7 @@ const depositUsdc = async (provider: IProvider): Promise<any> => {
     if (!feeData.gasPrice) throw new Error("Could not get gas price");
 
     const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
-    const depositAmount = ethers.parseUnits("1", 6);
+    const depositAmount = ethers.parseUnits(amount, 6);
 
     const approveTxParams = {
       from: userAddress,
@@ -181,7 +181,7 @@ const getAaveUsdcBalance = async (provider: IProvider): Promise<string | null> =
   }
 };
 
-const withdrawFromAave = async (provider: IProvider): Promise<any> => {
+const withdrawFromAave = async (provider: IProvider, amount: string): Promise<any> => {
   try {
     const ethersProvider = new ethers.BrowserProvider(provider);
     const signer = await ethersProvider.getSigner();
@@ -191,7 +191,7 @@ const withdrawFromAave = async (provider: IProvider): Promise<any> => {
     if (!feeData.gasPrice) throw new Error("Could not get gas price");
 
     const aavePool = new ethers.Contract(AAVE_POOL_ADDRESS, AAVE_POOL_ABI, signer);
-    const withdrawAmount = ethers.parseUnits("1", 6);
+    const withdrawAmount = ethers.parseUnits(amount, 6);
 
     const withdrawTxParams = {
       from: userAddress,
