@@ -59,14 +59,9 @@ function App() {
     web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
     chainConfig,
     web3AuthOptions: {
+      web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
       clientId,
       chainConfig,
-      uiConfig: {
-        appName: "W3A Heroes",
-        theme: "dark",
-        loginMethodsOrder: ["google"],
-        defaultLanguage: "en",
-      },
       enableLogging: true,
       privateKeyProvider,
       accountAbstractionProvider,
@@ -109,7 +104,6 @@ function AppContent() {
     isConnected,
     web3Auth
   } = useWeb3Auth();
-  const [loggedIn, setLoggedIn] = useState(false);
   const [onrampBuyUrl, setOnrampBuyUrl] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -123,13 +117,17 @@ function AppContent() {
     codeUrl: "build/Build/build.wasm",
   });
 
+  useEffect(() => {
+    generateOnrampBuyUrl();
+  }, [provider]);
+
   const generateOnrampBuyUrl = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
       return;
     }
     const address = await RPC.getAccounts(provider);
-    uiConsole(address);
+    uiConsole("address", address);
     const onrampBuyUrl = getOnrampBuyUrl({
       projectId,
       addresses: { [address]: ["base"] },
@@ -138,32 +136,43 @@ function AppContent() {
       fiatCurrency: "USD",
     });
     setOnrampBuyUrl(onrampBuyUrl);
+    console.log('onrampBuyUrl', onrampBuyUrl);
   };
+
+  useEffect(() => {
+    const initialize = async () => {
+      await connectTo(WALLET_ADAPTERS.AUTH, {
+        loginProvider: "google",
+      });
+    };
+    initialize();
+  }, []);
 
   useEffect(() => {
     if (web3Auth) {
       web3Auth.addListener(ADAPTER_EVENTS.CONNECTED, async () => {
-        setLoggedIn(true);
         generateOnrampBuyUrl();
         handleRetrieveGameBlob();
       });
 
       return () => {
-        web3Auth.removeListener(ADAPTER_EVENTS.CONNECTED);
+        web3Auth && web3Auth.removeListener(ADAPTER_EVENTS.CONNECTED);
       };
     }
   }, [web3Auth]);
 
   useEffect(() => {
-    sendGameState("LoginEvent");
-  }, [loggedIn]);
+    if (isConnected) {
+      sendGameState("LoginEvent");
+    }
+  }, [isConnected]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       sendGameState("UpdateState");
     }, 2000);
     return () => clearInterval(interval);
-  }, [loggedIn, localGameBlob, sendMessage]);
+  }, [isConnected, localGameBlob, sendMessage]);
 
   const sendGameState = async (eventName: string) => {
     const state = await getState();
@@ -183,6 +192,7 @@ function AppContent() {
         if (!isConnected) {
           await init();
         }
+        generateOnrampBuyUrl();
       } catch (error) {
         console.error("Failed to initialize Web3Auth:", error);
       }
@@ -201,7 +211,7 @@ function AppContent() {
 
   const getState = async () => {
     let state = {
-      loggedIn: false,
+      isConnected: false,
       gameBlob: "",
       user: {
         name: "",
@@ -214,8 +224,8 @@ function AppContent() {
         ausdc: 0,
       },
     };
-    state.loggedIn = loggedIn;
-    if (!loggedIn) {
+    state.isConnected = isConnected;
+    if (!isConnected) {
       return state;
     }
     if (!provider) {
@@ -237,18 +247,12 @@ function AppContent() {
   ////// END GAME MESSAGING INTEGRATION //////
 
   const login = async () => {
-    if (!web3Auth || loggedIn) return;
-    
+    if (!web3Auth || isConnected) return;
+
     try {
-      const web3authProvider = await connectTo(WALLET_ADAPTERS.OPENLOGIN, {
+      const web3authProvider = await connectTo(WALLET_ADAPTERS.AUTH, {
         loginProvider: "google",
-        mfaLevel: "none",
-        curve: "secp256k1",
       });
-      
-      if (web3authProvider) {
-        setLoggedIn(true);
-      }
     } catch (error) {
       console.error("Login failed:", error);
       uiConsole("Login failed:", error);
@@ -266,8 +270,7 @@ function AppContent() {
     // IMP START - Logout
     await web3Auth.logout();
     // IMP END - Logout
-  
-    setLoggedIn(false);
+
     uiConsole("logged out");
     sendGameState("LogoutEvent");
   };
@@ -369,7 +372,7 @@ function AppContent() {
   };
 
   const fundWalletWithUSDC = async () => {
-    console.log("hihi");
+    uiConsole(onrampBuyUrl);
     document.getElementById("cbonramp-button-container").children[0].click();
   };
 
@@ -638,14 +641,14 @@ function AppContent() {
           </div>
         </div>
         <div>
-        <button onClick={approveUsdcToAave} className="card action-button">Approve USDC to Aave</button>
-    
+          <button onClick={approveUsdcToAave} className="card action-button">Approve USDC to Aave</button>
+
         </div>
         <div>
           <button onClick={checkAllowance} className="card">Get USDC Allowance</button>
         </div>
         <div>
-        <button onClick={getAaveUsdcBalance} className="card">Get Aave USDC Balance</button>
+          <button onClick={getAaveUsdcBalance} className="card">Get Aave USDC Balance</button>
         </div>
         <div>
           <button onClick={getInterestIncome} className="card">Get Interest Income</button>
@@ -707,7 +710,7 @@ function AppContent() {
 
       <div className="main-container">
         <div className="left-panel">
-          <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
+          <div className="grid">{isConnected ? loggedInView : unloggedInView}</div>
         </div>
 
         <div className="right-panel">
