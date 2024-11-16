@@ -55,9 +55,6 @@ const accountAbstractionProvider = new AccountAbstractionProvider({
 
 function App() {
   const web3AuthConfig = {
-    clientId,
-    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-    chainConfig,
     web3AuthOptions: {
       web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
       clientId,
@@ -71,7 +68,7 @@ function App() {
         adapterSettings: {
           uxMode: UX_MODE.POPUP,
           whiteLabel: {
-            appName: "W3A Heroes",
+            appName: "Banana Babies",
             appUrl: "https://web3auth.io",
             logoLight: "https://web3auth.io/images/web3auth-logo.svg",
             logoDark: "https://web3auth.io/images/web3auth-logo---Dark.svg",
@@ -82,6 +79,13 @@ function App() {
             } as WHITE_LABEL_THEME,
             useLogoLoader: true,
           } as WhiteLabelData,
+          loginConfig: {
+            google: {
+              verifier: "Banana Babies",
+              typeOfLogin: "google",
+              clientId: "153058254489-pj5ve0jbfk7e70cqifm9hkq726jmln4e.apps.googleusercontent.com", //use your app client id you got from google
+            },
+          },
         },
       }),
     ],
@@ -141,9 +145,13 @@ function AppContent() {
 
   useEffect(() => {
     const initialize = async () => {
-      await connectTo(WALLET_ADAPTERS.AUTH, {
-        loginProvider: "google",
-      });
+      try {
+        await connectTo(WALLET_ADAPTERS.AUTH, {
+          loginProvider: "google",
+        });
+      } catch (error) {
+
+      }
     };
     initialize();
   }, []);
@@ -229,18 +237,22 @@ function AppContent() {
       return state;
     }
     if (!provider) {
-      uiConsole("provider not initialized yet");
       return state;
     }
-    state.gameBlob = localGameBlob || "";
-    state.user.address = await RPC.getAccounts(provider);
-    const user = await web3Auth.getUserInfo();
-    state.user.name = user.name;
-    state.user.email = user.email;
 
-    state.balances.base = Number(await RPC.getBalance(provider));
-    state.balances.usdc = Number(await RPC.getUsdcBalance(provider));
-    state.balances.ausdc = Number(await RPC.getAaveUsdcBalance(provider));
+    try {
+      state.gameBlob = localGameBlob || "";
+      state.user.address = await RPC.getAccounts(provider);
+      const user = await web3Auth.getUserInfo();
+      state.user.name = user.name;
+      state.user.email = user.email;
+
+      state.balances.base = Number(await RPC.getBalance(provider));
+      state.balances.usdc = Number(await RPC.getUsdcBalance(provider));
+      state.balances.ausdc = Number(await RPC.getAaveUsdcBalance(provider));
+    } catch (error) {
+      console.log("Error getting state:", error);
+    }
 
     return state;
   };
@@ -503,45 +515,6 @@ function AppContent() {
     } catch (error) {
       console.error("Error getting interest income:", error);
       uiConsole("Error getting interest income:", error.message);
-    }
-  };
-
-  const getTransactionHistory = async () => {
-    if (!provider) {
-      uiConsole("provider not initialized yet");
-      return;
-    }
-    try {
-      const history = await RPC.getAaveTransactionHistory(provider);
-
-      if (history && history.transactions.length > 0) {
-        // Format the transaction list for display
-        const transactionList = history.transactions.map((tx) => ({
-          Type: tx.type,
-          Amount: `${tx.amount} USDC`,
-          Date: tx.timestamp,
-        }));
-
-        uiConsole({
-          "Transaction History": transactionList,
-          Summary: {
-            "Total Deposited": `${history.totalDeposited} USDC`,
-            "Total Withdrawn": `${history.totalWithdrawn} USDC`,
-            "Current Balance": `${history.currentBalance} USDC`,
-            "Total Income": `${history.totalIncome} USDC`,
-          },
-        });
-      } else if (history) {
-        uiConsole({
-          Message: "No transactions found in recent history",
-          "Current Balance": `${history.currentBalance} USDC`,
-        });
-      } else {
-        uiConsole("Error retrieving transaction history");
-      }
-    } catch (error) {
-      console.error("Error getting transaction history:", error);
-      uiConsole("Error details:", error.message);
     }
   };
 
