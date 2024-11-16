@@ -1,41 +1,21 @@
-# Web3Auth (`@web3auth/modal`) x EVM x Next.js
+# Banana Babies
 
-[![Web3Auth](https://img.shields.io/badge/Web3Auth-SDK-blue)](https://web3auth.io/docs/sdk/pnp/web/modal)
-[![Web3Auth](https://img.shields.io/badge/Web3Auth-Community-cyan)](https://community.web3auth.io)
+Banana Babies is a web2 user friendly tamagotchi-style virtual pet game. You interact with your pet using rewards earned from depositing USDC in a Defi vault. While players earn interest, they also earn bananas in the game. Bananas are the in-game currency used to feed, upgrade and interact with your pet. 
 
-[Join our Community Portal](https://community.web3auth.io/) to get support and stay up to date with the latest news and updates.
+We built this game to make children and adults want to save more - the more they save, the more they can do with their Banana Baby. Although it feels like a web2 game with Google login, every user has their own Web3Auth embedded wallet underneath. We built an integration with Coinbase USDC, the only onramp with zero fees, so users can start earning interest the second they join. 
 
-This example demonstrates how to use Web3Auth with EVM in Next.js
+Many mobile games are designed around mechanics of wait-to-win (energy runs out and recharges over time) or pay-to-win (buy gems to unlock equipment etc). That’s not cool, but with DeFi, we propose a new game mechanic: we call it save-2-win. 
 
-## How to Use
+## How it's made
 
-### One-Click Deploy to Vercel
+Wallet: We used Web3Auth with Social login, which we felt matches the typical web2 sign up flow in a mobile app. We chose the non-mondal plug and play kit as we wanted to minimize dialogs and choices for the player. We added the native account abstraction provider and bundler/paymaster from pimlico sponsoring gas for gasless transactions, so that actions like adding USDC to a vault would not require base ETH tokens. 
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FWeb3Auth%2Fweb3auth-pnp-examples%2Ftree%2Fmain%2Fweb-modal-sdk%2Fquick-starts%2Fnextjs-modal-quick-start&project-name=w3a-nextjs-modal&repository-name=w3a-nextjs-modal)
+Defi vault: When the player chooses to invest in the banana farm with gold coins, they’re really depositing/supplying the USDC into Aave. Banana rewards are calculated based on the interest/profit and are an integral part of the in-game economy which players will use to feed and play with their babies. 
 
-### Download Manually
+Game Framework: Unity + WebGL. We chose this game framework as it is the most popular with game devs to grow the project with professional assets (we used public domain images based on the hackathon rules). While we could only use public static assets (typically we'd need to work with a designer to build animated elephants), Unity would allow us to quickly upgrade the animations and interactions in the future. 
 
-```bash
-npx degit Web3Auth/web3auth-pnp-examples/web-no-modal-sdk/quick-starts/nextjs-no-modal-quick-start w3a-example
-```
+Onramp: Coinbase Onramp. It was important to us to find an onramp with ZERO fees because when you teach children (or anyone) to save, they can't be losing 3% onboarding. After our exploration, the only onramp we could find that matched this for USDC was Coinbase. They support onramping less than $500 without a Coinbase account at a 1:1 USD conversion rate. TO implement the popup with minimal user disruption we used onchainkit but hid the fund button (we generate the click event when the user clicks the banana tree plus sign in game). 
 
-Install & Run:
+Game State Store: Nillion. We store the game state (number of bananas) a blob on Nillion. We used the signature of a secret string as the user seed, so that the state can be cross device. 
 
-```bash
-cd w3a-example
-npm install
-npm run dev
-# or
-cd w3a-example
-yarn
-yarn dev
-```
-
-## Important Links
-
-- [Website](https://web3auth.io)
-- [Docs](https://web3auth.io/docs)
-- [Guides](https://web3auth.io/docs/guides)
-- [SDK / API References](https://web3auth.io/docs/sdk)
-- [Pricing](https://web3auth.io/pricing.html)
-- [Community Portal](https://community.web3auth.io)
+Finally, all transactions happen on Base with USDC, because they are some of the cheapest and we felt would have the best support for the USDC ecosystem. 
