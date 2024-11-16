@@ -17,7 +17,7 @@ import { AuthAdapter, WHITE_LABEL_THEME, WhiteLabelData } from "@web3auth/auth-a
 import { AccountAbstractionProvider, SafeSmartAccount } from "@web3auth/account-abstraction-provider";
 
 import { FundButton, getOnrampBuyUrl } from "@coinbase/onchainkit/fund";
-import { ethers } from "ethers";
+import { Unity, useUnityContext } from "react-unity-webgl";
 
 const projectId = "3493580c-c1e2-42e3-9c88-e5e432644331";
 
@@ -62,7 +62,7 @@ const authAdapter = new AuthAdapter({
   adapterSettings: {
     clientId, //Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
     network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET, // Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
-    uxMode: UX_MODE.REDIRECT,
+    uxMode: UX_MODE.POPUP,
     whiteLabel: {
       appName: "W3A Heroes",
       appUrl: "https://web3auth.io",
@@ -87,6 +87,12 @@ function App() {
   const [onrampBuyUrl, setOnrampBuyUrl] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const { unityProvider } = useUnityContext({
+    loaderUrl: "game/build.loader.js",
+    dataUrl: "game/build.data",
+    frameworkUrl: "game/build.framework.js",
+    codeUrl: "game/build.wasm",
+  });
 
   const generateOnrampBuyUrl = async () => {
     if (!provider) {
@@ -396,6 +402,7 @@ function App() {
         & NextJS Quick Start
       </h1>
 
+      <Unity unityProvider={unityProvider} />
       <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
       <div id="console" style={{ whiteSpace: "pre-line" }}>
         <p style={{ whiteSpace: "pre-line" }}></p>
