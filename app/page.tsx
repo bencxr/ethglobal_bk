@@ -90,6 +90,7 @@ function App() {
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [gameInput, setGameInput] = useState("");
+  const [localGameBlob, setLocalGameBlob] = useState("");
 
   const { unityProvider, sendMessage, addEventListener, removeEventListener } = useUnityContext({
     loaderUrl: "build/Build/build.loader.js",
@@ -118,6 +119,7 @@ function App() {
   web3auth.addListener(ADAPTER_EVENTS.CONNECTED, async () => {
     setLoggedIn(true);
     generateOnrampBuyUrl();
+    handleRetrieveGameBlob();
   });
 
   useEffect(() => {
@@ -129,14 +131,18 @@ function App() {
       sendGameState("UpdateState");
     }, 2000);
     return () => clearInterval(interval);
-  }, [loggedIn]);
+  }, [loggedIn, localGameBlob, sendMessage]);
 
   const sendGameState = async (eventName: string) => {
     const state = await getState();
 
-    // console.log("Sending Game State");
-    // console.log(state);
-    sendMessage("GameController", eventName, JSON.stringify(state));
+    console.log("Sending Game State", new Date().toISOString());
+    console.log(state);
+    try {
+      sendMessage("GameController", eventName, JSON.stringify(state));
+    } catch (error) {
+      console.log("Error sending game state:", error);
+    }
   };
 
   useEffect(() => {
@@ -162,28 +168,10 @@ function App() {
   /**
    * methods that deal with game integration
    */
-  addEventListener("PromptLogin", () => {
-    login();
-  });
-  addEventListener("PromptFunding", () => {
-    fundWalletWithUSDC();
-  });
-  addEventListener("DepositAll", () => {
-    depositUsdc();
-  });
-  addEventListener("GetState", () => {
-    sendGameState("UpdateState");
-  });
-  addEventListener(
-    "StoreBlob",
-    useCallback((blob) => {
-      storeGameBlob(blob);
-    }, [])
-  );
+  addEventListener("PromptLogin", () => { login(); });
+  addEventListener("PromptFunding", () => { fundWalletWithUSDC(); });
 
-  const storeGameBlob = async (blob: string) => {
-    localStorage.setItem("gameBlob", blob);
-  };
+  addEventListener("GetState", () => { sendGameState("UpdateState"); });
 
   const getState = async () => {
     let state = {
@@ -208,7 +196,7 @@ function App() {
       uiConsole("provider not initialized yet");
       return state;
     }
-    state.gameBlob = localStorage.getItem("gameBlob") || "{}";
+    state.gameBlob = localGameBlob || "";
     state.user.address = await RPC.getAccounts(provider);
     const user = await web3auth.getUserInfo();
     state.user.name = user.name;
@@ -261,7 +249,7 @@ function App() {
     uiConsole("USDC Balance:", balance);
   };
 
-  const depositUsdc = async () => {
+  const depositUsdc = useCallback(async () => {
     let amountToDeposit = depositAmount;
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -274,7 +262,22 @@ function App() {
     const receipt = await RPC.depositUsdc(provider, amountToDeposit);
     uiConsole("Deposit result:", receipt);
     setDepositAmount(""); // Reset input after deposit
-  };
+  }, [provider, depositAmount, uiConsole]);
+
+  useEffect(() => {
+    // Create the callback function inside useEffect to access current provider value
+    const handleDepositAll = () => {
+      depositUsdc();
+    };
+
+    // Add the event listener
+    addEventListener("DepositAll", handleDepositAll);
+
+    // Clean up by removing the event listener when dependencies change
+    return () => {
+      removeEventListener("DepositAll", handleDepositAll);
+    };
+  }, [depositUsdc]); // Include depositUsdc in dependencies
 
   const getAccounts = async () => {
     const address = await RPC.getAccounts(provider);
@@ -350,12 +353,13 @@ function App() {
     }
   }
 
-  const handleStoreGameBlob = async () => {
+  const handleStoreGameBlob = async (blob: string) => {
     if (!provider) {
       uiConsole("provider not initialized yet");
       return;
     }
-    if (!gameInput) {
+    if (!blob) { blob = gameInput; }
+    if (!blob) {
       uiConsole("Please enter some data to store");
       return;
     }
@@ -363,7 +367,9 @@ function App() {
       const signedMessage = await RPC.signMessage(provider);
       initializeNillion(signedMessage);
 
-      const response = await storeGameBlob(gameInput);
+      setLocalGameBlob(blob);
+      console.log("Storing game blob: ", blob);
+      const response = await storeGameBlob(blob);
       uiConsole("Game data stored successfully:", response);
       setGameInput(""); // Clear input after successful store
     } catch (error) {
@@ -371,6 +377,7 @@ function App() {
       uiConsole("Error storing game data:", error);
     }
   };
+  addEventListener("StoreBlob", useCallback((blob) => { handleStoreGameBlob(blob); }, [provider, handleStoreGameBlob]));
 
   const handleRetrieveGameBlob = async () => {
     if (!provider) {
@@ -386,7 +393,8 @@ function App() {
       console.log("Retrieved Data:", retrievedData);
 
       if (retrievedData) {
-        localStorage.setItem("gameBlob", JSON.stringify(retrievedData));
+        setLocalGameBlob(retrievedData.secret);
+        console.log("setlocalgameblob", retrievedData.secret);
         uiConsole("Retrieved game state:", retrievedData);
       } else {
         uiConsole("No data retrieved");
@@ -579,7 +587,7 @@ function App() {
               placeholder="Enter data to store"
               className="amount-input"
             />
-            <button onClick={handleStoreGameBlob} className="card">
+            <button onClick={() => handleStoreGameBlob(gameInput)} className="card">
               Store Game Data
             </button>
           </div>

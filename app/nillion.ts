@@ -7,7 +7,7 @@ let USER_SEED;
 
 export const initializeNillion = (userSeed: string) => {
   USER_SEED = userSeed;
-  console.log("Nillion initialized with seed:", userSeed);
+  // console.log("Nillion initialized with seed:", userSeed);
 };
 
 export const createUser = async () => {
@@ -52,7 +52,7 @@ export const retrieveGameBlob = async () => {
     // Get store IDs
     const storeIdsResponse = await axios.get(`${API_BASE}/api/apps/${APP_ID}/store_ids`);
     const data = storeIdsResponse.data;
-    console.log("Store IDs response:", data);
+    // console.log("Store IDs response:", data);
 
     const filteredStoreIds = data.store_ids.filter(
       (store) => store.nillion_user_id === USER_ID && store.secret_name === "saveGame"
@@ -64,7 +64,7 @@ export const retrieveGameBlob = async () => {
     }
 
     const storeID = filteredStoreIds[0].store_id;
-    console.log("Using Store ID:", storeID);
+    // console.log("Using Store ID:", storeID);
 
     // Add error handling for the retrieve request
     try {
