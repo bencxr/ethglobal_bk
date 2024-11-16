@@ -583,6 +583,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ec73f77d61e0d4a7fa7ffae12e93135c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  GameController: {fileID: 2057032109}
 --- !u!1 &1862402392
 GameObject:
   m_ObjectHideFlags: 0
@@ -597,7 +598,7 @@ GameObject:
   - component: {fileID: 1862402395}
   m_Layer: 0
   m_Name: Elephant
-  m_TagString: Untagged
+  m_TagString: Elephant
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -640,10 +641,10 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 1294852221
+  m_SortingLayer: 1
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: daf8e935d53114c95bc795ed957bba80, type: 3}
+  m_Sprite: {fileID: 21300000, guid: b398b269b5b28493188e1519742cb726, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1022,6 +1023,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d6581124a9152409f8527170a2f550ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _GameController: {fileID: 2057032109}
+  Heart: {fileID: 2300957619323003706, guid: 4fa834f80140c47ddbc0672033997d22, type: 3}
+  ElephantHungry: {fileID: 21300000, guid: b398b269b5b28493188e1519742cb726, type: 3}
+  ElephantNeutral: {fileID: 21300000, guid: daf8e935d53114c95bc795ed957bba80, type: 3}
   _DialogueManager: {fileID: 391738655}
 --- !u!1 &1960777627
 GameObject:

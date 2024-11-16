@@ -11,7 +11,7 @@ public class Elephant : MonoBehaviour
 
     SpriteRenderer _SpriteRenderer;
 
-    bool TriggeredLogin = false;;
+    bool TriggeredLogin = false;
 
 
     string[] ElephantText = new string[] {
@@ -62,7 +62,7 @@ public class Elephant : MonoBehaviour
 
             if (!TriggeredLogin)
             {
-                _GameController.TriggeredLogin();
+                _GameController.TriggerLogin();
                 TriggeredLogin = true;
             }
         }

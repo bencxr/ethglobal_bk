@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Runtime.InteropServices;
 
 public class GameController : MonoBehaviour
 {
@@ -12,6 +13,9 @@ public class GameController : MonoBehaviour
     public GameObject Banana;
 
     int NumBananas;
+
+    [DllImport("__Internal")]
+    private static extern void PromptLogin ();
 
     // Start is called before the first frame update
     void Start()
@@ -58,6 +62,10 @@ public class GameController : MonoBehaviour
     {
         Debug.Log("Login Triggered");
         _DialogueManager.PromptLogin();
+
+        #if UNITY_WEBGL == true && UNITY_EDITOR == false
+            PromptLogin ();
+        #endif
     }
 
     public void PromptPlantation()
