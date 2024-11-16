@@ -299,7 +299,7 @@ function App() {
       return;
     }
     const balance = await RPC.getBalance(provider);
-    uiConsole(balance);
+    uiConsole("ETH Balance:", balance);
   };
 
   const signMessage = async () => {
@@ -518,54 +518,38 @@ function App() {
   const loggedInView = (
     <>
       <div className="flex-container">
+        {/* Account Management */}
+        <div className="section-header">Account</div>
         <div>
-          <button onClick={getUserInfo} className="card">
-            Get User Info
-          </button>
+          <button onClick={getUserInfo} className="card">Get User Info</button>
         </div>
         <div>
-          <button onClick={getAccounts} className="card">
-            Get Accounts
-          </button>
+          <button onClick={getAccounts} className="card">Get Accounts</button>
         </div>
         <div>
-          <button onClick={getBalance} className="card">
-            Get Balance
-          </button>
+          <button onClick={logout} className="card danger-button">Log Out</button>
+        </div>
+
+        {/* Wallet Operations */}
+        <div className="section-header">Wallet</div>
+        <div>
+          <button onClick={getBalance} className="card">Get ETH Balance</button>
         </div>
         <div>
-          <button onClick={showState} className="card">
-            Show State
-          </button>
+          <button onClick={getUsdcBalance} className="card">Get USDC Balance</button>
         </div>
         <div>
-          <button onClick={signMessage} className="card">
-            Sign Message
-          </button>
+          <button onClick={fundWalletWithUSDC} className="card action-button">Fund Wallet with USDC</button>
         </div>
         <div>
-          <button onClick={sendTransaction} className="card">
-            Send Transaction
-          </button>
+          <button onClick={sendTransaction} className="card action-button">Send Transaction</button>
         </div>
         <div>
-          <button onClick={fundWalletWithUSDC} className="card">
-            Fund Wallet with USDC
-          </button>
-          <div id="cbonramp-button-container" style={{ visibility: "hidden" }}>
-            <FundButton fundingUrl={onrampBuyUrl} />
-          </div>
+          <button onClick={signMessage} className="card action-button">Sign Message</button>
         </div>
-        <div>
-          <button onClick={logout} className="card">
-            Log Out
-          </button>
-        </div>
-        <div>
-          <button onClick={getUsdcBalance} className="card">
-            Get USDC Balance
-          </button>
-        </div>
+
+        {/* Aave Operations */}
+        <div className="section-header">Aave Operations</div>
         <div>
           <div className="input-container">
             <input
@@ -576,9 +560,7 @@ function App() {
               placeholder="Amount in USDC"
               className="amount-input"
             />
-            <button onClick={depositUsdc} className="card">
-              Deposit USDC into Aave
-            </button>
+            <button onClick={depositUsdc} className="card action-button">Deposit USDC into Aave</button>
           </div>
         </div>
         <div>
@@ -591,21 +573,27 @@ function App() {
               placeholder="Amount in USDC"
               className="amount-input"
             />
-            <button onClick={withdrawFromAave} className="card">
-              Withdraw from Aave
-            </button>
+            <button onClick={withdrawFromAave} className="card action-button">Withdraw from Aave</button>
           </div>
         </div>
         <div>
-          <button onClick={getAaveUsdcBalance} className="card">
-            Get aUSDC Balance
-          </button>
+          <button onClick={getAaveUsdcBalance} className="card">Get Aave USDC Balance</button>
         </div>
-        <div className="button-group">
-          <button onClick={getInterestProfits} className="card">
-            Get Interest Profits
-          </button>
+        <div>
+          <button onClick={checkAllowance} className="card">Get USDC Allowance</button>
         </div>
+        <div>
+          <button onClick={approveUsdcToAave} className="card action-button">Approve USDC to Aave</button>
+        </div>
+        <div>
+          <button onClick={getInterestIncome} className="card">Get Interest Income</button>
+        </div>
+        {/* <div>
+          <button onClick={getTransactionHistory} className="card">Get Transaction History</button>
+        </div> */}
+
+        {/* Game Data */}
+        <div className="section-header">Game Data</div>
         <div>
           <div className="input-container">
             <input
@@ -615,35 +603,16 @@ function App() {
               placeholder="Enter data to store"
               className="amount-input"
             />
-            <button onClick={() => handleStoreGameBlob(gameInput)} className="card">
+            <button onClick={() => handleStoreGameBlob(gameInput)} className="card action-button">
               Store Game Data
             </button>
           </div>
         </div>
         <div>
-          <button onClick={handleRetrieveGameBlob} className="card">
-            Retrieve Game Blob
-          </button>
+          <button onClick={handleRetrieveGameBlob} className="card action-button">Retrieve Game Data</button>
         </div>
         <div>
-          <button onClick={getInterestIncome} className="card">
-            Get Interest Income
-          </button>
-        </div>
-        <div>
-          <button onClick={getTransactionHistory} className="card">
-            View Transaction History
-          </button>
-        </div>
-        <div>
-          <button onClick={approveUsdcToAave} className="card">
-            Approve USDC Allowance for Aave
-          </button>
-        </div>
-        <div>
-          <button onClick={checkAllowance} className="card">
-            Check USDC Allowance
-          </button>
+          <button onClick={showState} className="card">Show Game State</button>
         </div>
       </div>
     </>
@@ -668,9 +637,17 @@ function App() {
           />
         </div>
       </div>
-      <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
-      <div id="console" style={{ whiteSpace: "pre-line" }}>
-        <p style={{ whiteSpace: "pre-line" }}></p>
+      
+      <div className="main-container">
+        <div className="left-panel">
+          <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
+        </div>
+        
+        <div className="right-panel">
+          <div id="console" style={{ whiteSpace: "pre-line" }}>
+            <p style={{ whiteSpace: "pre-line" }}></p>
+          </div>
+        </div>
       </div>
 
       <footer className="footer">
