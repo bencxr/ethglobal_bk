@@ -4,10 +4,16 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 public class DialogueManager : MonoBehaviour
-{
+{   
     VisualElement Root;
+    VisualElement TextContainer;
     Label TextBox;
     Button NextButton;
+
+    VisualElement ElephantContainer;
+    Label ElephantText;
+    Button ElephantButton;
+    
 
     public bool IsShakingEgg = false;
     int OnShakePhase = 0;
@@ -22,6 +28,12 @@ public class DialogueManager : MonoBehaviour
         Root = GetComponent<UIDocument>().rootVisualElement;
         TextBox = Root.Q<Label>("Text");
         NextButton = Root.Q<Button>("Next");
+        TextContainer = Root.Q<VisualElement>("DialogueBox");
+
+        ElephantText = Root.Q<Label>("ElephantText");
+        ElephantButton = Root.Q<Button>("ElephantButton");
+        ElephantContainer = Root.Q<VisualElement>("Elephant");
+
 
         NextButton.RegisterCallback<ClickEvent>(NextButtonClicked);
 
@@ -59,5 +71,19 @@ public class DialogueManager : MonoBehaviour
     public void HatchElephantText()
     {
         TextBox.text = "A baby elephant hatched!";
+    }
+
+    public void SetMainText(string text)
+    {
+        TextBox.text = text;
+        TextContainer.style.display = DisplayStyle.Flex;
+        ElephantContainer.style.display = DisplayStyle.None;
+    }
+
+    public void SetElephantText(string text)
+    {
+        ElephantText.text = text;
+        TextContainer.style.display = DisplayStyle.None;
+        ElephantContainer.style.display = DisplayStyle.Flex;
     }
 }
