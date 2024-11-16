@@ -630,13 +630,17 @@ function App() {
 
   return (
     <div className="container">
-      <Unity
-        unityProvider={unityProvider}
-        style={{
-          width: "300px",
-          height: "650px",
-        }}
-      />
+      <div className="main-content">
+        <div className="unity-container">
+          <Unity
+            unityProvider={unityProvider}
+            style={{
+              width: "300px",
+              height: "650px",
+            }}
+          />
+        </div>
+      </div>
       <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
       <div id="console" style={{ whiteSpace: "pre-line" }}>
         <p style={{ whiteSpace: "pre-line" }}></p>
