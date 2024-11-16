@@ -19,6 +19,9 @@ public class DialogueManager : MonoBehaviour
     int OnShakePhase = 0;
     string[] ShakeText = new string[] {"Poke the egg!", "Keep poking!!", "poke poke...", "poke poke poke...", "poke poke poke poke...", "Almost there...!"};
 
+    enum OnboardPhase { FirstHungry, FirstFed, LoggingIn, Plantation, OnboardDone };
+    OnboardPhase CurrentPhase = OnboardPhase.FirstHungry;
+
 
     public GameController _GameController;
 
@@ -34,10 +37,8 @@ public class DialogueManager : MonoBehaviour
         ElephantButton = Root.Q<Button>("ElephantButton");
         ElephantContainer = Root.Q<VisualElement>("Elephant");
 
-
         NextButton.RegisterCallback<ClickEvent>(NextButtonClicked);
-
-        //Root.Q<Label>("Text").text = "huh";
+        ElephantButton.RegisterCallback<ClickEvent>(NextElephantButtonClicked);
     }
 
     // Update is called once per frame
@@ -50,10 +51,31 @@ public class DialogueManager : MonoBehaviour
     {
         Debug.Log("Clicked");
 
+        if (CurrentPhase == OnboardPhase.Plantation)
+        {
+            return;
+        }
+
+        if (CurrentPhase == OnboardPhase.LoggingIn)
+        {
+            _GameController.PromptPlantation();
+            return;
+        }
+
         IsShakingEgg = true;
         if(IsShakingEgg)
         {
             SetShakeText();
+        }
+    }
+
+    void NextElephantButtonClicked(ClickEvent e)
+    {
+        if (CurrentPhase == OnboardPhase.FirstHungry)
+        {
+            CurrentPhase = OnboardPhase.FirstFed;
+            SetMainText("Feed your baby some bananas!");
+            _GameController.PromptBanana();
         }
     }
 
@@ -85,5 +107,11 @@ public class DialogueManager : MonoBehaviour
         ElephantText.text = text;
         TextContainer.style.display = DisplayStyle.None;
         ElephantContainer.style.display = DisplayStyle.Flex;
+    }
+
+    public void PromptLogin()
+    {
+        SetMainText("Let's log into your account");
+        CurrentPhase = OnboardPhase.LoggingIn;
     }
 }
