@@ -1,10 +1,18 @@
 # Banana Babies
 
-Banana Babies is a web2 user friendly tamagotchi-style virtual pet game. You interact with your pet using rewards earned from depositing USDC in a Defi vault. While players earn interest, they also earn bananas in the game. Bananas are the in-game currency used to feed, upgrade and interact with your pet. 
+Web2 Virtual Pet Game for Children and Adults, Elevated by Web3 Save-2-Win Mechanics
 
-We built this game to make children and adults want to save more - the more they save, the more they can do with their Banana Baby. Although it feels like a web2 game with Google login, every user has their own Web3Auth embedded wallet underneath. We built an integration with Coinbase USDC, the only onramp with zero fees, so users can start earning interest the second they join. 
+## What is this game?
+
+Banana Babies is a web2 user friendly tamagotchi-style virtual pet game. You interact with your pet using rewards earned from depositing USDC in a Defi vault. While players earn USDC interest, they also earn bananas in the game. Bananas are the in-game currency used to feed, upgrade and interact with your pet. 
+
+We built this game to make children and adults want to save more - the more they save, the more they can do with their Banana Baby. Although it feels like a web2 game with Google login, every user has their own Web3Auth embedded wallet underneath. We built an integration with Coinbase USDC, the only onramp with zero fees, so users can start earning interest on Base the second they join. 
 
 Many mobile games are designed around mechanics of wait-to-win (energy runs out and recharges over time) or pay-to-win (buy gems to unlock equipment etc). That’s not cool, but with DeFi, we propose a new game mechanic: we call it save-2-win. 
+
+## When and where?
+
+We built this project at the EthGlobal Hackathon in Bangkok in November 2024.
 
 ## How it's made
 
