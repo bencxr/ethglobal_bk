@@ -29,7 +29,7 @@ const clientId = "BFIqnq2jKx4HB0PscxrJW8f_4C287cqgBvbb7ZL2v4YVe3yuAqxFQkuKp6-JuF
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
   chainId: "0x2105",
-  rpcTarget: "https://rpc.ankr.com/base",
+  rpcTarget: "https://alien-wild-sea.base-mainnet.quiknode.pro/ca5bb3cb0b7b348e774bff7a5c2de16660cbfe9d",
   displayName: "Base",
   blockExplorerUrl: "https://basescan.org/",
   ticker: "ETH",
@@ -259,6 +259,7 @@ function App() {
     if (!amountToDeposit || isNaN(Number(amountToDeposit))) {
       amountToDeposit = await RPC.getUsdcBalance(provider) || "0";
     }
+    console.log("Depositing USDC: " + amountToDeposit);
     const receipt = await RPC.depositUsdc(provider, amountToDeposit);
     uiConsole("Deposit result:", receipt);
     setDepositAmount(""); // Reset input after deposit
