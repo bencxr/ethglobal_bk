@@ -85,6 +85,8 @@ function App() {
   const [provider, setProvider] = useState<IProvider | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
   const [onrampBuyUrl, setOnrampBuyUrl] = useState("");
+  const [depositAmount, setDepositAmount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
 
   const generateOnrampBuyUrl = async () => {
     if (!provider) {
@@ -170,8 +172,13 @@ function App() {
       uiConsole("provider not initialized yet");
       return;
     }
-    const receipt = await RPC.depositUsdc(provider);
+    if (!depositAmount || isNaN(Number(depositAmount))) {
+      uiConsole("Please enter a valid amount");
+      return;
+    }
+    const receipt = await RPC.depositUsdc(provider, depositAmount);
     uiConsole("Deposit result:", receipt);
+    setDepositAmount(""); // Reset input after deposit
   };
 
   const getAccounts = async () => {
@@ -222,8 +229,13 @@ function App() {
       uiConsole("provider not initialized yet");
       return;
     }
-    const receipt = await RPC.withdrawFromAave(provider);
+    if (!withdrawAmount || isNaN(Number(withdrawAmount))) {
+      uiConsole("Please enter a valid amount");
+      return;
+    }
+    const receipt = await RPC.withdrawFromAave(provider, withdrawAmount);
     uiConsole("Withdrawal result:", receipt);
+    setWithdrawAmount(""); // Reset input after withdrawal
   };
 
   const fundWalletWithUSDC = async () => {
@@ -285,18 +297,38 @@ function App() {
           </button>
         </div>
         <div>
-          <button onClick={depositUsdc} className="card">
-            Deposit USDC into Aave
-          </button>
+          <div className="input-container">
+            <input
+              type="number"
+              step="0.000001"
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              placeholder="Amount in USDC"
+              className="amount-input"
+            />
+            <button onClick={depositUsdc} className="card">
+              Deposit USDC into Aave
+            </button>
+          </div>
+        </div>
+        <div>
+          <div className="input-container">
+            <input
+              type="number"
+              step="0.000001"
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+              placeholder="Amount in USDC"
+              className="amount-input"
+            />
+            <button onClick={withdrawFromAave} className="card">
+              Withdraw from Aave
+            </button>
+          </div>
         </div>
         <div>
           <button onClick={getAaveUsdcBalance} className="card">
             Get aUSDC Balance
-          </button>
-        </div>
-        <div>
-          <button onClick={withdrawFromAave} className="card">
-            Withdraw from Aave
           </button>
         </div>
       </div>
