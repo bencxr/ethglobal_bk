@@ -13,6 +13,7 @@ import {
 } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
+import { useWeb3Auth, Web3AuthProvider } from "@web3auth/no-modal-react-hooks";
 import { AuthAdapter, WHITE_LABEL_THEME, WhiteLabelData } from "@web3auth/auth-adapter";
 import { AccountAbstractionProvider, SafeSmartAccount } from "@web3auth/account-abstraction-provider";
 
@@ -52,47 +53,61 @@ const accountAbstractionProvider = new AccountAbstractionProvider({
   },
 });
 
-const web3auth = new Web3AuthNoModal({
-  clientId,
-  web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-  privateKeyProvider,
-  accountAbstractionProvider,
-  useAAWithExternalWallet: true,
-});
-
-const authAdapter = new AuthAdapter({
-  adapterSettings: {
-    clientId, //Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
-    network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET, // Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
-    uxMode: UX_MODE.POPUP,
-    whiteLabel: {
-      appName: "Banana Babies",
-      appUrl: "https://web3auth.io",
-      logoLight: "https://web3auth.io/images/web3auth-logo.svg",
-      logoDark: "https://web3auth.io/images/web3auth-logo---Dark.svg",
-      defaultLanguage: "en", // en, de, ja, ko, zh, es, fr, pt, nl, tr
-      mode: "dark", // whether to enable dark mode. defaultValue: auto
-      theme: {
-        primary: "#00D1B2",
-      } as WHITE_LABEL_THEME,
-      useLogoLoader: true,
-    } as WhiteLabelData,
-    loginConfig: {
-      google: {
-        verifier: "Banana Babies",
-        typeOfLogin: "google",
-        clientId: "153058254489-pj5ve0jbfk7e70cqifm9hkq726jmln4e.apps.googleusercontent.com", //use your app client id you got from google
-      },
-    },
-  },
-  privateKeyProvider,
-});
-web3auth.configureAdapter(authAdapter);
-// IMP END - SDK Initialization
-
 function App() {
-  const [provider, setProvider] = useState<IProvider | null>(null);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const web3AuthConfig = {
+    web3AuthOptions: {
+      web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+      clientId,
+      chainConfig,
+      enableLogging: true,
+      privateKeyProvider,
+      accountAbstractionProvider,
+    },
+    adapters: [
+      new AuthAdapter({
+        adapterSettings: {
+          uxMode: UX_MODE.POPUP,
+          whiteLabel: {
+            appName: "Banana Babies",
+            appUrl: "https://web3auth.io",
+            logoLight: "https://web3auth.io/images/web3auth-logo.svg",
+            logoDark: "https://web3auth.io/images/web3auth-logo---Dark.svg",
+            defaultLanguage: "en",
+            mode: "dark",
+            theme: {
+              primary: "#00D1B2",
+            } as WHITE_LABEL_THEME,
+            useLogoLoader: true,
+          } as WhiteLabelData,
+          loginConfig: {
+            google: {
+              verifier: "Banana Babies",
+              typeOfLogin: "google",
+              clientId: "153058254489-pj5ve0jbfk7e70cqifm9hkq726jmln4e.apps.googleusercontent.com", //use your app client id you got from google
+            },
+          },
+        },
+      }),
+    ],
+  };
+
+  return (
+    <Web3AuthProvider config={web3AuthConfig}>
+      <AppContent />
+    </Web3AuthProvider>
+  );
+}
+
+function AppContent() {
+  const {
+    provider,
+    init,
+    connectTo,
+    logout: web3AuthLogout,
+    getUserInfo: web3AuthGetUserInfo,
+    isConnected,
+    web3Auth
+  } = useWeb3Auth();
   const [onrampBuyUrl, setOnrampBuyUrl] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -106,13 +121,17 @@ function App() {
     codeUrl: "build/Build/build.wasm",
   });
 
+  useEffect(() => {
+    generateOnrampBuyUrl();
+  }, [provider]);
+
   const generateOnrampBuyUrl = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
       return;
     }
     const address = await RPC.getAccounts(provider);
-    uiConsole(address);
+    uiConsole("address", address);
     const onrampBuyUrl = getOnrampBuyUrl({
       projectId,
       addresses: { [address]: ["base"] },
@@ -121,24 +140,47 @@ function App() {
       fiatCurrency: "USD",
     });
     setOnrampBuyUrl(onrampBuyUrl);
+    console.log('onrampBuyUrl', onrampBuyUrl);
   };
 
-  web3auth.addListener(ADAPTER_EVENTS.CONNECTED, async () => {
-    setLoggedIn(true);
-    generateOnrampBuyUrl();
-    handleRetrieveGameBlob();
-  });
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        await connectTo(WALLET_ADAPTERS.AUTH, {
+          loginProvider: "google",
+        });
+      } catch (error) {
+
+      }
+    };
+    initialize();
+  }, []);
 
   useEffect(() => {
-    sendGameState("LoginEvent");
-  }, [loggedIn]);
+    if (web3Auth) {
+      web3Auth.addListener(ADAPTER_EVENTS.CONNECTED, async () => {
+        generateOnrampBuyUrl();
+        handleRetrieveGameBlob();
+      });
+
+      return () => {
+        web3Auth && web3Auth.removeListener(ADAPTER_EVENTS.CONNECTED);
+      };
+    }
+  }, [web3Auth]);
+
+  useEffect(() => {
+    if (isConnected) {
+      sendGameState("LoginEvent");
+    }
+  }, [isConnected]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       sendGameState("UpdateState");
     }, 2000);
     return () => clearInterval(interval);
-  }, [loggedIn, localGameBlob, sendMessage]);
+  }, [isConnected, localGameBlob, sendMessage]);
 
   const sendGameState = async (eventName: string) => {
     const state = await getState();
@@ -153,24 +195,19 @@ function App() {
   };
 
   useEffect(() => {
-    const init = async () => {
+    const initialize = async () => {
       try {
-        // IMP START - SDK Initialization
-        await web3auth.init();
-        // IMP END - SDK Initialization
-        setProvider(web3auth.provider);
-
-        if (web3auth.connected) {
-          setLoggedIn(true);
-          generateOnrampBuyUrl();
+        if (!isConnected) {
+          await init();
         }
+        generateOnrampBuyUrl();
       } catch (error) {
-        console.error(error);
+        console.error("Failed to initialize Web3Auth:", error);
       }
     };
 
-    init();
-  }, []);
+    initialize();
+  }, [init, isConnected]);
 
   /**
    * methods that deal with game integration
@@ -182,7 +219,7 @@ function App() {
 
   const getState = async () => {
     let state = {
-      loggedIn: false,
+      isConnected: false,
       gameBlob: "",
       user: {
         name: "",
@@ -195,56 +232,57 @@ function App() {
         ausdc: 0,
       },
     };
-    state.loggedIn = loggedIn;
-    if (!loggedIn) {
+    state.isConnected = isConnected;
+    if (!isConnected) {
       return state;
     }
     if (!provider) {
-      uiConsole("provider not initialized yet");
       return state;
     }
-    state.gameBlob = localGameBlob || "";
-    state.user.address = await RPC.getAccounts(provider);
-    const user = await web3auth.getUserInfo();
-    state.user.name = user.name;
-    state.user.email = user.email;
 
-    state.balances.base = Number(await RPC.getBalance(provider));
-    state.balances.usdc = Number(await RPC.getUsdcBalance(provider));
-    state.balances.ausdc = Number(await RPC.getAaveUsdcBalance(provider));
+    try {
+      state.gameBlob = localGameBlob || "";
+      state.user.address = await RPC.getAccounts(provider);
+      const user = await web3Auth.getUserInfo();
+      state.user.name = user.name;
+      state.user.email = user.email;
+
+      state.balances.base = Number(await RPC.getBalance(provider));
+      state.balances.usdc = Number(await RPC.getUsdcBalance(provider));
+      state.balances.ausdc = Number(await RPC.getAaveUsdcBalance(provider));
+    } catch (error) {
+      console.log("Error getting state:", error);
+    }
 
     return state;
   };
   ////// END GAME MESSAGING INTEGRATION //////
 
   const login = async () => {
-    if (loggedIn) return;
-    // IMP START - Login
-    if (web3auth.connected) return;
+    if (!web3Auth || isConnected) return;
 
-    const web3authProvider = await web3auth.connectTo(WALLET_ADAPTERS.AUTH, {
-      loginProvider: "google",
-    });
-    // IMP END - Login
-    setProvider(web3authProvider);
-    if (web3auth.connected) {
-      setLoggedIn(true);
+    try {
+      const web3authProvider = await connectTo(WALLET_ADAPTERS.AUTH, {
+        loginProvider: "google",
+      });
+    } catch (error) {
+      console.error("Login failed:", error);
+      uiConsole("Login failed:", error);
     }
   };
 
   const getUserInfo = async () => {
     // IMP START - Get User Information
-    const user = await web3auth.getUserInfo();
+    const user = await web3Auth.getUserInfo();
     // IMP END - Get User Information
     uiConsole(user);
   };
 
   const logout = async () => {
     // IMP START - Logout
-    await web3auth.logout();
+    await web3Auth.logout();
     // IMP END - Logout
-    setProvider(null);
-    setLoggedIn(false);
+
     uiConsole("logged out");
     sendGameState("LogoutEvent");
   };
@@ -346,6 +384,7 @@ function App() {
   };
 
   const fundWalletWithUSDC = async () => {
+    uiConsole(onrampBuyUrl);
     document.getElementById("cbonramp-button-container").children[0].click();
   };
 
@@ -479,45 +518,6 @@ function App() {
     }
   };
 
-  const getTransactionHistory = async () => {
-    if (!provider) {
-      uiConsole("provider not initialized yet");
-      return;
-    }
-    try {
-      const history = await RPC.getAaveTransactionHistory(provider);
-
-      if (history && history.transactions.length > 0) {
-        // Format the transaction list for display
-        const transactionList = history.transactions.map((tx) => ({
-          Type: tx.type,
-          Amount: `${tx.amount} USDC`,
-          Date: tx.timestamp,
-        }));
-
-        uiConsole({
-          "Transaction History": transactionList,
-          Summary: {
-            "Total Deposited": `${history.totalDeposited} USDC`,
-            "Total Withdrawn": `${history.totalWithdrawn} USDC`,
-            "Current Balance": `${history.currentBalance} USDC`,
-            "Total Income": `${history.totalIncome} USDC`,
-          },
-        });
-      } else if (history) {
-        uiConsole({
-          Message: "No transactions found in recent history",
-          "Current Balance": `${history.currentBalance} USDC`,
-        });
-      } else {
-        uiConsole("Error retrieving transaction history");
-      }
-    } catch (error) {
-      console.error("Error getting transaction history:", error);
-      uiConsole("Error details:", error.message);
-    }
-  };
-
   const approveUsdcToAave = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -614,13 +614,14 @@ function App() {
           </div>
         </div>
         <div>
-          <button onClick={getAaveUsdcBalance} className="card">Get Aave USDC Balance</button>
+          <button onClick={approveUsdcToAave} className="card action-button">Approve USDC to Aave</button>
+
         </div>
         <div>
           <button onClick={checkAllowance} className="card">Get USDC Allowance</button>
         </div>
         <div>
-          <button onClick={approveUsdcToAave} className="card action-button">Approve USDC to Aave</button>
+          <button onClick={getAaveUsdcBalance} className="card">Get Aave USDC Balance</button>
         </div>
         <div>
           <button onClick={getInterestIncome} className="card">Get Interest Income</button>
@@ -682,7 +683,7 @@ function App() {
 
       <div className="main-container">
         <div className="left-panel">
-          <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
+          <div className="grid">{isConnected ? loggedInView : unloggedInView}</div>
         </div>
 
         <div className="right-panel">
