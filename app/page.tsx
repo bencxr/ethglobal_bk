@@ -13,6 +13,7 @@ import {
 } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
+import { useWeb3Auth, Web3AuthProvider } from "@web3auth/no-modal-react-hooks";
 import { AuthAdapter, WHITE_LABEL_THEME, WhiteLabelData } from "@web3auth/auth-adapter";
 import { AccountAbstractionProvider, SafeSmartAccount } from "@web3auth/account-abstraction-provider";
 
@@ -52,39 +53,62 @@ const accountAbstractionProvider = new AccountAbstractionProvider({
   },
 });
 
-const web3auth = new Web3AuthNoModal({
-  clientId,
-  web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
-  privateKeyProvider,
-  accountAbstractionProvider,
-  useAAWithExternalWallet: true,
-});
-
-const authAdapter = new AuthAdapter({
-  adapterSettings: {
-    clientId, //Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
-    network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET, // Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
-    uxMode: UX_MODE.POPUP,
-    whiteLabel: {
-      appName: "W3A Heroes",
-      appUrl: "https://web3auth.io",
-      logoLight: "https://web3auth.io/images/web3auth-logo.svg",
-      logoDark: "https://web3auth.io/images/web3auth-logo---Dark.svg",
-      defaultLanguage: "en", // en, de, ja, ko, zh, es, fr, pt, nl, tr
-      mode: "dark", // whether to enable dark mode. defaultValue: auto
-      theme: {
-        primary: "#00D1B2",
-      } as WHITE_LABEL_THEME,
-      useLogoLoader: true,
-    } as WhiteLabelData,
-  },
-  privateKeyProvider,
-});
-web3auth.configureAdapter(authAdapter);
-// IMP END - SDK Initialization
-
 function App() {
-  const [provider, setProvider] = useState<IProvider | null>(null);
+  const web3AuthConfig = {
+    clientId,
+    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+    chainConfig,
+    web3AuthOptions: {
+      clientId,
+      chainConfig,
+      uiConfig: {
+        appName: "W3A Heroes",
+        theme: "dark",
+        loginMethodsOrder: ["google"],
+        defaultLanguage: "en",
+      },
+      enableLogging: true,
+      privateKeyProvider,
+      accountAbstractionProvider,
+    },
+    adapters: [
+      new AuthAdapter({
+        adapterSettings: {
+          uxMode: UX_MODE.POPUP,
+          whiteLabel: {
+            appName: "W3A Heroes",
+            appUrl: "https://web3auth.io",
+            logoLight: "https://web3auth.io/images/web3auth-logo.svg",
+            logoDark: "https://web3auth.io/images/web3auth-logo---Dark.svg",
+            defaultLanguage: "en",
+            mode: "dark",
+            theme: {
+              primary: "#00D1B2",
+            } as WHITE_LABEL_THEME,
+            useLogoLoader: true,
+          } as WhiteLabelData,
+        },
+      }),
+    ],
+  };
+
+  return (
+    <Web3AuthProvider config={web3AuthConfig}>
+      <AppContent />
+    </Web3AuthProvider>
+  );
+}
+
+function AppContent() {
+  const {
+    provider,
+    init,
+    connectTo,
+    logout: web3AuthLogout,
+    getUserInfo: web3AuthGetUserInfo,
+    isConnected,
+    web3Auth
+  } = useWeb3Auth();
   const [loggedIn, setLoggedIn] = useState(false);
   const [onrampBuyUrl, setOnrampBuyUrl] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
@@ -116,11 +140,19 @@ function App() {
     setOnrampBuyUrl(onrampBuyUrl);
   };
 
-  web3auth.addListener(ADAPTER_EVENTS.CONNECTED, async () => {
-    setLoggedIn(true);
-    generateOnrampBuyUrl();
-    handleRetrieveGameBlob();
-  });
+  useEffect(() => {
+    if (web3Auth) {
+      web3Auth.addListener(ADAPTER_EVENTS.CONNECTED, async () => {
+        setLoggedIn(true);
+        generateOnrampBuyUrl();
+        handleRetrieveGameBlob();
+      });
+
+      return () => {
+        web3Auth.removeListener(ADAPTER_EVENTS.CONNECTED);
+      };
+    }
+  }, [web3Auth]);
 
   useEffect(() => {
     sendGameState("LoginEvent");
@@ -146,24 +178,18 @@ function App() {
   };
 
   useEffect(() => {
-    const init = async () => {
+    const initialize = async () => {
       try {
-        // IMP START - SDK Initialization
-        await web3auth.init();
-        // IMP END - SDK Initialization
-        setProvider(web3auth.provider);
-
-        if (web3auth.connected) {
-          setLoggedIn(true);
-          generateOnrampBuyUrl();
+        if (!isConnected) {
+          await init();
         }
       } catch (error) {
-        console.error(error);
+        console.error("Failed to initialize Web3Auth:", error);
       }
     };
 
-    init();
-  }, []);
+    initialize();
+  }, [init, isConnected]);
 
   /**
    * methods that deal with game integration
@@ -198,7 +224,7 @@ function App() {
     }
     state.gameBlob = localGameBlob || "";
     state.user.address = await RPC.getAccounts(provider);
-    const user = await web3auth.getUserInfo();
+    const user = await web3Auth.getUserInfo();
     state.user.name = user.name;
     state.user.email = user.email;
 
@@ -211,32 +237,36 @@ function App() {
   ////// END GAME MESSAGING INTEGRATION //////
 
   const login = async () => {
-    if (loggedIn) return;
-    // IMP START - Login
-    if (web3auth.connected) return;
-
-    const web3authProvider = await web3auth.connectTo(WALLET_ADAPTERS.AUTH, {
-      loginProvider: "google",
-    });
-    // IMP END - Login
-    setProvider(web3authProvider);
-    if (web3auth.connected) {
-      setLoggedIn(true);
+    if (!web3Auth || loggedIn) return;
+    
+    try {
+      const web3authProvider = await connectTo(WALLET_ADAPTERS.OPENLOGIN, {
+        loginProvider: "google",
+        mfaLevel: "none",
+        curve: "secp256k1",
+      });
+      
+      if (web3authProvider) {
+        setLoggedIn(true);
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      uiConsole("Login failed:", error);
     }
   };
 
   const getUserInfo = async () => {
     // IMP START - Get User Information
-    const user = await web3auth.getUserInfo();
+    const user = await web3Auth.getUserInfo();
     // IMP END - Get User Information
     uiConsole(user);
   };
 
   const logout = async () => {
     // IMP START - Logout
-    await web3auth.logout();
+    await web3Auth.logout();
     // IMP END - Logout
-    setProvider(null);
+  
     setLoggedIn(false);
     uiConsole("logged out");
     sendGameState("LogoutEvent");
@@ -339,6 +369,7 @@ function App() {
   };
 
   const fundWalletWithUSDC = async () => {
+    console.log("hihi");
     document.getElementById("cbonramp-button-container").children[0].click();
   };
 
@@ -607,13 +638,14 @@ function App() {
           </div>
         </div>
         <div>
-          <button onClick={getAaveUsdcBalance} className="card">Get Aave USDC Balance</button>
+        <button onClick={approveUsdcToAave} className="card action-button">Approve USDC to Aave</button>
+    
         </div>
         <div>
           <button onClick={checkAllowance} className="card">Get USDC Allowance</button>
         </div>
         <div>
-          <button onClick={approveUsdcToAave} className="card action-button">Approve USDC to Aave</button>
+        <button onClick={getAaveUsdcBalance} className="card">Get Aave USDC Balance</button>
         </div>
         <div>
           <button onClick={getInterestIncome} className="card">Get Interest Income</button>
