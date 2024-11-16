@@ -136,7 +136,7 @@ const approveUsdcToAave = async (provider: IProvider): Promise<any> => {
 
     const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
     // Approve 5 USDC (with 6 decimals)
-    const approveAmount = ethers.parseUnits("5", 6);
+    const approveAmount = ethers.parseUnits("1000", 6);
 
     const approveTxParams = {
       from: userAddress,
@@ -391,6 +391,26 @@ const getAaveTransactionHistory = async (
   }
 };
 
+const checkUsdcAllowance = async (provider: IProvider): Promise<string> => {
+  try {
+    const ethersProvider = new ethers.BrowserProvider(provider);
+    const signer = await ethersProvider.getSigner();
+    const userAddress = await signer.getAddress();
+
+    const usdcContract = new ethers.Contract(
+      USDC_ADDRESS,
+      ["function allowance(address owner, address spender) external view returns (uint256)"],
+      signer
+    );
+
+    const allowance = await usdcContract.allowance(userAddress, AAVE_POOL_ADDRESS);
+    return ethers.formatUnits(allowance, 6);
+  } catch (error) {
+    console.error("Error checking USDC allowance:", error);
+    return "0";
+  }
+};
+
 export default {
   getChainId,
   getAccounts,
@@ -404,4 +424,5 @@ export default {
   withdrawFromAave,
   getAavePosition,
   getAaveTransactionHistory,
+  checkUsdcAllowance,
 };
