@@ -19,6 +19,10 @@ public class HUD : MonoBehaviour
     Button PlantationButton;
     Button HomeButton;
 
+    Button BobaButton;
+    Button UkuleleButton;
+    Button LaptopButton;    
+
     // Start is called before the first frame update
     void Start()
     {
@@ -34,12 +38,18 @@ public class HUD : MonoBehaviour
         TreesButton = Root.Q<Button>("TreesButton");
         PlantationButton = Root.Q<Button>("PlantationButton");
         HomeButton = Root.Q<Button>("HomeButton");
+        BobaButton = Root.Q<Button>("BobaButton");
+        UkuleleButton = Root.Q<Button>("UkuleleButton");
+        LaptopButton = Root.Q<Button>("LaptopButton");  
 
         BananasIcon.RegisterCallback<ClickEvent>(FeedElephant);
         PlantationButton.RegisterCallback<ClickEvent>(GoToPlantation);
         HomeButton.RegisterCallback<ClickEvent>(GoToHome);
         CoinsButton.RegisterCallback<ClickEvent>(TriggerFunding);
         TreesButton.RegisterCallback<ClickEvent>(ConfirmDepost);
+        BobaButton.RegisterCallback<ClickEvent>(DrinkBoba);
+        UkuleleButton.RegisterCallback<ClickEvent>(PlayUkulele);
+        LaptopButton.RegisterCallback<ClickEvent>(UseLaptop);
     }
 
     // Update is called once per frame
@@ -66,6 +76,20 @@ public class HUD : MonoBehaviour
     public void ShowPlantation()
     {
         PlantationButton.style.display = DisplayStyle.Flex;
+    }
+
+    public void ShowItems()
+    {
+        BobaButton.style.display = DisplayStyle.Flex;
+        UkuleleButton.style.display = DisplayStyle.Flex;
+        LaptopButton.style.display = DisplayStyle.Flex;
+    }
+
+    public void HideItems()
+    {
+        BobaButton.style.display = DisplayStyle.None;
+        UkuleleButton.style.display = DisplayStyle.None;
+        LaptopButton.style.display = DisplayStyle.None;
     }
 
     void FeedElephant(ClickEvent e)
@@ -120,6 +144,23 @@ public class HUD : MonoBehaviour
 
     public void ConfirmDepost(ClickEvent e)
     {
+        Debug.Log("ConfirmDepost");
         GameController.ConfirmDepost();
+    }
+
+    void DrinkBoba(ClickEvent e)
+    {
+        Debug.Log("DrinkBoba");
+        GameController.DrinkBoba();
+    }
+
+    void PlayUkulele(ClickEvent e)
+    {
+        GameController.PlayUkulele();
+    }
+    
+    void UseLaptop(ClickEvent e)
+    {
+        GameController.UseLaptop();
     }
 }

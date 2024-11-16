@@ -213,6 +213,8 @@ function App() {
   const login = async () => {
     if (loggedIn) return;
     // IMP START - Login
+    if (web3auth.connected) return;
+
     const web3authProvider = await web3auth.connectTo(WALLET_ADAPTERS.AUTH, {
       loginProvider: "google",
     });
@@ -353,7 +355,7 @@ function App() {
     }
   }
 
-  const handleStoreGameBlob = async (blob: string) => {
+  const handleStoreGameBlob = useCallback(async (blob: string) => {
     if (!provider) {
       uiConsole("provider not initialized yet");
       return;
@@ -376,8 +378,16 @@ function App() {
       console.error("Error in handleStoreGameBlob:", error);
       uiConsole("Error storing game data:", error);
     }
-  };
-  addEventListener("StoreBlob", useCallback((blob) => { handleStoreGameBlob(blob); }, [provider, handleStoreGameBlob]));
+  }, [provider, gameInput, uiConsole]);
+
+  const handleStoreBlobFromGame = useCallback((blob: any) => {
+    console.log("StoreBlob event received:", blob);
+    handleStoreGameBlob(blob);
+  }, [handleStoreGameBlob]);
+  useEffect(() => {
+    addEventListener("StoreBlob", handleStoreBlobFromGame);
+    return () => removeEventListener("StoreBlob", handleStoreBlobFromGame);
+  }, [handleStoreGameBlob]);
 
   const handleRetrieveGameBlob = async () => {
     if (!provider) {
@@ -515,6 +525,23 @@ function App() {
     }
   };
 
+  const sendUSDCTransaction = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const toAddress = "0xF15A780336068B58997bFd4640F008349c27636C"; // Example address
+      const amount = "12"; // Send 0.1 USDC
+
+      const receipt = await RPC.sendUsdcTransaction(provider, toAddress, amount);
+      uiConsole("USDC Transaction sent:", receipt);
+    } catch (error) {
+      console.error("Error sending USDC:", error);
+      uiConsole("Error sending USDC:", error);
+    }
+  };
+
   const loggedInView = (
     <>
       <div className="flex-container">
@@ -613,6 +640,11 @@ function App() {
         </div>
         <div>
           <button onClick={showState} className="card">Show Game State</button>
+        </div>
+        <div>
+          <button onClick={sendUSDCTransaction} className="card">
+            Send USDC Transaction
+          </button>
         </div>
       </div>
     </>
