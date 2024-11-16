@@ -146,14 +146,16 @@ function App() {
     };
 
     init();
-
-    addEventListener("PromptLogin", () => { login(); });
-    addEventListener("GetState", () => { sendGameState(); });
-    addEventListener("StoreBlob", useCallback((blob) => {
-      storeGameBlob(blob);
-    }, []));
   }, []);
 
+  /**
+   * methods that deal with game integration
+   */
+  addEventListener("PromptLogin", () => { login(); });
+  addEventListener("GetState", () => { sendGameState(); });
+  addEventListener("StoreBlob", useCallback((blob) => {
+    storeGameBlob(blob);
+  }, []));
 
   const storeGameBlob = async (blob: string) => {
     localStorage.setItem("gameBlob", blob);
@@ -195,6 +197,7 @@ function App() {
 
     return state;
   }
+  ////// END GAME MESSAGING INTEGRATION //////
 
   const login = async () => {
     // IMP START - Login
@@ -421,8 +424,8 @@ function App() {
   return (
     <div className="container">
       <Unity unityProvider={unityProvider} style={{
-        width: '600px',
-        height: '1100px',
+        width: '300px',
+        height: '650px',
       }} />
       <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
       <div id="console" style={{ whiteSpace: "pre-line" }}>
