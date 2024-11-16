@@ -70,6 +70,8 @@ public class GameController : MonoBehaviour
         // disable WebGLInput.captureAllKeyboardInput so elements in web page can handle keyboard inputs
             WebGLInput.captureAllKeyboardInput = false;
         #endif
+
+        StartCoroutine(GenerateBananas());
     }
 
     // Update is called once per frame
@@ -115,8 +117,10 @@ public class GameController : MonoBehaviour
             PromptLogin ();
         #endif
 
-        // string mock = @"{""loggedIn"":true,""gameBlob"":""{\""\""peanuts\"":\""yes\""}"",""user"":{""name"":""Benedict Chan"",""email"":""bencxr@fragnetics.com"",""address"":""0x4F7bb64Ac069Bb3A6a0332d9F8f844a5819daA17""},""balances"":{""base"":0.002,""usdc"":1,""ausdc"":1.000024}}";
-        //LoginEvent(mock);
+        #if UNITY_EDITOR == true
+            string mock = @"{""loggedIn"":true,""gameBlob"":""{\""\""peanuts\"":\""yes\""}"",""user"":{""name"":""Benedict Chan"",""email"":""bencxr@fragnetics.com"",""address"":""0x4F7bb64Ac069Bb3A6a0332d9F8f844a5819daA17""},""balances"":{""base"":0.002,""usdc"":1,""ausdc"":1.000024}}";
+            LoginEvent(mock);
+        #endif
     }
 
     public void PromptPlantation()
@@ -192,5 +196,15 @@ public class GameController : MonoBehaviour
         #if UNITY_WEBGL == true && UNITY_EDITOR == false
             DepositAll ();
         #endif
+    }
+
+    IEnumerator GenerateBananas()
+    {
+        while (true) {
+            Debug.Log("Generating bananas");
+            NumBananas += NumBananaTrees;
+            _HUD.SetBananas(NumBananas);
+            yield return new WaitForSeconds(15);
+        } 
     }
 }
