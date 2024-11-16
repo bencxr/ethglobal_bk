@@ -418,6 +418,20 @@ function App() {
     }
   };
 
+  const checkAllowance = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const allowance = await RPC.checkUsdcAllowance(provider);
+      uiConsole("USDC Allowance for Aave:", allowance, "USDC");
+    } catch (error) {
+      console.error("Error checking allowance:", error);
+      uiConsole("Error checking allowance:", error);
+    }
+  };
+
   const getInterestProfits = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -631,7 +645,12 @@ function App() {
         </div>
         <div>
           <button onClick={approveUsdcToAave} className="card">
-            Approve USDC for Aave
+            Approve USDC Allowance for Aave
+          </button>
+        </div>
+        <div>
+          <button onClick={checkAllowance} className="card">
+            Check USDC Allowance
           </button>
         </div>
       </div>
