@@ -51,11 +51,25 @@ public class GameController : MonoBehaviour
     [DllImport("__Internal")]
     private static extern void PromptLogin ();
 
+    [DllImport("__Internal")]
+    private static extern void PromptFunding ();
+
+    [DllImport("__Internal")]
+    private static extern void DepositAll ();
+
+
+    private bool HasLoggedIn = false;
+
     // Start is called before the first frame update
     void Start()
     {
         NumBananas = 5;
         _HUD.SetBananas(NumBananas);
+
+        #if !UNITY_EDITOR && UNITY_WEBGL
+        // disable WebGLInput.captureAllKeyboardInput so elements in web page can handle keyboard inputs
+            WebGLInput.captureAllKeyboardInput = false;
+        #endif
     }
 
     // Update is called once per frame
@@ -113,11 +127,22 @@ public class GameController : MonoBehaviour
 
     public void LoginEvent(string json)
     {   
-        Debug.Log("Login Event: " + json);
-        LoginSession = JsonUtility.FromJson<LoginResponse>(json);
-        Debug.Log($"User logged in: {LoginSession.user.name} with address: {LoginSession.user.address}");
+        UpdateState(json);
 
-        PromptPlantation();
+        if (!HasLoggedIn)
+        {
+            HasLoggedIn = true;
+            PromptPlantation();
+        }
+    }
+
+    public void UpdateState(string json)
+    {
+        LoginSession = JsonUtility.FromJson<LoginResponse>(json);
+        NumCoins = (int)LoginSession.balances.usdc;
+        NumBananaTrees = (int)LoginSession.balances.ausdc;
+        _HUD.SetCoins(NumCoins);
+        _HUD.SetTrees(NumBananaTrees);
     }
 
     public void GoToPlantation()
@@ -145,7 +170,27 @@ public class GameController : MonoBehaviour
     public void PromptUserWelcome()
     {
         _HUD.ShowCoins();
+        _HUD.ShowTrees();
         _DialogueManager.HideDialogue();
         _Modal.ShowWelcome();
+    }
+
+    public void TriggerFunding()
+    {
+        #if UNITY_WEBGL == true && UNITY_EDITOR == false
+            PromptFunding ();
+        #endif
+    }
+
+    public void ConfirmDepost()
+    {
+        _Modal.ShowConfirmation();
+    }
+
+    public void TriggerDeposit()
+    {
+        #if UNITY_WEBGL == true && UNITY_EDITOR == false
+            DepositAll ();
+        #endif
     }
 }

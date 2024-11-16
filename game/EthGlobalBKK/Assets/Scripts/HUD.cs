@@ -11,6 +11,10 @@ public class HUD : MonoBehaviour
     Label BananasQty;
     VisualElement Coins;
     Label CoinsQty;
+    Button CoinsButton;
+    VisualElement Trees;
+    Label TreesQty;
+    Button TreesButton;
     VisualElement BananasIcon;
     Button PlantationButton;
     Button HomeButton;
@@ -24,12 +28,18 @@ public class HUD : MonoBehaviour
         BananasQty = Root.Q<Label>("BananaQty");
         Coins = Root.Q<VisualElement>("Coins");
         CoinsQty = Root.Q<Label>("CoinsQty");
+        CoinsButton = Root.Q<Button>("CoinsButton");
+        Trees = Root.Q<VisualElement>("Trees");
+        TreesQty = Root.Q<Label>("TreesQty");
+        TreesButton = Root.Q<Button>("TreesButton");
         PlantationButton = Root.Q<Button>("PlantationButton");
         HomeButton = Root.Q<Button>("HomeButton");
 
         BananasIcon.RegisterCallback<ClickEvent>(FeedElephant);
         PlantationButton.RegisterCallback<ClickEvent>(GoToPlantation);
         HomeButton.RegisterCallback<ClickEvent>(GoToHome);
+        CoinsButton.RegisterCallback<ClickEvent>(TriggerFunding);
+        TreesButton.RegisterCallback<ClickEvent>(ConfirmDepost);
     }
 
     // Update is called once per frame
@@ -46,6 +56,11 @@ public class HUD : MonoBehaviour
     public void ShowCoins()
     {
         Coins.style.display = DisplayStyle.Flex;
+    }
+
+    public void ShowTrees()
+    {
+        Trees.style.display = DisplayStyle.Flex;
     }
 
     public void ShowPlantation()
@@ -67,6 +82,11 @@ public class HUD : MonoBehaviour
     {
         CoinsQty.text = numCoins.ToString();
     }
+
+    public void SetTrees(int numTrees)
+    {
+        TreesQty.text = numTrees.ToString();
+    }  
 
     public void GoToPlantation(ClickEvent e)
     {
@@ -90,5 +110,16 @@ public class HUD : MonoBehaviour
             PlantationButton.style.display = DisplayStyle.None;
             HomeButton.style.display = DisplayStyle.Flex;
         }
+    }
+
+    public void TriggerFunding(ClickEvent e)
+    {
+        Debug.Log("TriggerFunding");
+        GameController.TriggerFunding();
+    }
+
+    public void ConfirmDepost(ClickEvent e)
+    {
+        GameController.ConfirmDepost();
     }
 }
