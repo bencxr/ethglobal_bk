@@ -94,7 +94,7 @@ const signMessage = async (provider: IProvider): Promise<any> => {
     // For ethers v5
     // const signer = ethersProvider.getSigner();
     const signer = await ethersProvider.getSigner();
-    const originalMessage = "YOUR_MESSAGE";
+    const originalMessage = "PRIVATE_SECRET_ELEPHANT_MESSAGE";
 
     // Sign the message
     const signedMessage = await signer.signMessage(originalMessage);

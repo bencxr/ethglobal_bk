@@ -230,6 +230,47 @@ function App() {
     document.getElementById("cbonramp-button-container").children[0].click();
   };
 
+  const getState = async () => {
+    let state = {
+      loggedIn: false,
+      gameBlob: {},
+      user: {
+        name: "",
+        email: "",
+        address: "0x"
+      },
+      balances: {
+        base: 0,
+        usdc: 0,
+        ausdc: 0
+      }
+    };
+    state.loggedIn = loggedIn;
+    if (!loggedIn) {
+      return state;
+    }
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return state;
+    }
+    state.gameBlob = JSON.parse(localStorage.getItem("gameBlob") || "{}");
+    state.user.address = await RPC.getAccounts(provider);
+    const user = await web3auth.getUserInfo();
+    state.user.name = user.name;
+    state.user.email = user.email;
+
+    state.balances.base = Number(await RPC.getBalance(provider));
+    state.balances.usdc = Number(await RPC.getUsdcBalance(provider));
+    state.balances.ausdc = Number(await RPC.getAaveUsdcBalance(provider));
+
+    return state;
+  }
+
+  const showState = async () => {
+    const state = await getState();
+    uiConsole(state);
+  }
+
   function uiConsole(...args: any[]): void {
     const el = document.querySelector("#console>p");
     if (el) {
@@ -254,6 +295,11 @@ function App() {
         <div>
           <button onClick={getBalance} className="card">
             Get Balance
+          </button>
+        </div>
+        <div>
+          <button onClick={showState} className="card">
+            Show State
           </button>
         </div>
         <div>
