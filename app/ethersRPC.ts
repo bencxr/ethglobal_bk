@@ -125,7 +125,7 @@ const getUsdcBalance = async (provider: IProvider): Promise<string | null> => {
   }
 };
 
-const depositUsdc = async (provider: IProvider, amount: string): Promise<any> => {
+const approveUsdcToAave = async (provider: IProvider): Promise<any> => {
   try {
     const ethersProvider = new ethers.BrowserProvider(provider);
     const signer = await ethersProvider.getSigner();
@@ -135,7 +135,8 @@ const depositUsdc = async (provider: IProvider, amount: string): Promise<any> =>
     if (!feeData.gasPrice) throw new Error("Could not get gas price");
 
     const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
-    const depositAmount = ethers.parseUnits(amount, 6);
+    // Approve 5 USDC (with 6 decimals)
+    const approveAmount = ethers.parseUnits("5", 6);
 
     const approveTxParams = {
       from: userAddress,
@@ -145,10 +146,25 @@ const depositUsdc = async (provider: IProvider, amount: string): Promise<any> =>
       nonce: await ethersProvider.getTransactionCount(userAddress),
     };
 
-    const approveTx = await usdcContract.approve(AAVE_POOL_ADDRESS, depositAmount, approveTxParams);
-    const approveReceipt = await approveTx.wait();
+    const approveTx = await usdcContract.approve(AAVE_POOL_ADDRESS, approveAmount, approveTxParams);
+    return await approveTx.wait();
+  } catch (error) {
+    return error;
+  }
+};
+
+const depositUsdc = async (provider: IProvider, amount: string): Promise<any> => {
+  try {
+    const ethersProvider = new ethers.BrowserProvider(provider);
+    const signer = await ethersProvider.getSigner();
+    const userAddress = await signer.getAddress();
+
+    const feeData = await ethersProvider.getFeeData();
+    if (!feeData.gasPrice) throw new Error("Could not get gas price");
 
     const aavePool = new ethers.Contract(AAVE_POOL_ADDRESS, AAVE_POOL_ABI, signer);
+    const depositAmount = ethers.parseUnits(amount, 6);
+
     const supplyTxParams = {
       from: userAddress,
       gasPrice: feeData.gasPrice,
@@ -382,6 +398,7 @@ export default {
   sendTransaction,
   signMessage,
   getUsdcBalance,
+  approveUsdcToAave,
   depositUsdc,
   getAaveUsdcBalance,
   withdrawFromAave,

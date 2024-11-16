@@ -487,6 +487,20 @@ function App() {
     }
   };
 
+  const approveUsdcToAave = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const receipt = await RPC.approveUsdcToAave(provider);
+      uiConsole("USDC Approval successful:", receipt);
+    } catch (error) {
+      console.error("USDC Approval failed:", error);
+      uiConsole("USDC Approval failed:", error);
+    }
+  };
+
   const loggedInView = (
     <>
       <div className="flex-container">
@@ -607,6 +621,11 @@ function App() {
             View Transaction History
           </button>
         </div>
+        <div>
+          <button onClick={approveUsdcToAave} className="card">
+            Approve USDC for Aave
+          </button>
+        </div>
       </div>
     </>
   );
@@ -619,13 +638,17 @@ function App() {
 
   return (
     <div className="container">
-      <Unity
-        unityProvider={unityProvider}
-        style={{
-          width: "300px",
-          height: "650px",
-        }}
-      />
+      <div className="main-content">
+        <div className="unity-container">
+          <Unity
+            unityProvider={unityProvider}
+            style={{
+              width: "300px",
+              height: "650px",
+            }}
+          />
+        </div>
+      </div>
       <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
       <div id="console" style={{ whiteSpace: "pre-line" }}>
         <p style={{ whiteSpace: "pre-line" }}></p>
