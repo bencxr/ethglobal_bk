@@ -213,6 +213,8 @@ function App() {
   const login = async () => {
     if (loggedIn) return;
     // IMP START - Login
+    if (web3auth.connected) return;
+
     const web3authProvider = await web3auth.connectTo(WALLET_ADAPTERS.AUTH, {
       loginProvider: "google",
     });
@@ -353,7 +355,7 @@ function App() {
     }
   }
 
-  const handleStoreGameBlob = async (blob: string) => {
+  const handleStoreGameBlob = useCallback(async (blob: string) => {
     if (!provider) {
       uiConsole("provider not initialized yet");
       return;
@@ -376,8 +378,16 @@ function App() {
       console.error("Error in handleStoreGameBlob:", error);
       uiConsole("Error storing game data:", error);
     }
-  };
-  addEventListener("StoreBlob", useCallback((blob) => { handleStoreGameBlob(blob); }, [provider, handleStoreGameBlob]));
+  }, [provider, gameInput, uiConsole]);
+
+  const handleStoreBlobFromGame = useCallback((blob: any) => {
+    console.log("StoreBlob event received:", blob);
+    handleStoreGameBlob(blob);
+  }, [handleStoreGameBlob]);
+  useEffect(() => {
+    addEventListener("StoreBlob", handleStoreBlobFromGame);
+    return () => removeEventListener("StoreBlob", handleStoreBlobFromGame);
+  }, [handleStoreGameBlob]);
 
   const handleRetrieveGameBlob = async () => {
     if (!provider) {
@@ -407,6 +417,20 @@ function App() {
         console.error("Response headers:", error.response.headers);
       }
       uiConsole("Error retrieving game state:", error.message);
+    }
+  };
+
+  const checkAllowance = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const allowance = await RPC.checkUsdcAllowance(provider);
+      uiConsole("USDC Allowance for Aave:", allowance, "USDC");
+    } catch (error) {
+      console.error("Error checking allowance:", error);
+      uiConsole("Error checking allowance:", error);
     }
   };
 
@@ -498,6 +522,23 @@ function App() {
     } catch (error) {
       console.error("USDC Approval failed:", error);
       uiConsole("USDC Approval failed:", error);
+    }
+  };
+
+  const sendUSDCTransaction = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const toAddress = "0xF15A780336068B58997bFd4640F008349c27636C"; // Example address
+      const amount = "12"; // Send 0.1 USDC
+
+      const receipt = await RPC.sendUsdcTransaction(provider, toAddress, amount);
+      uiConsole("USDC Transaction sent:", receipt);
+    } catch (error) {
+      console.error("Error sending USDC:", error);
+      uiConsole("Error sending USDC:", error);
     }
   };
 
@@ -623,7 +664,17 @@ function App() {
         </div>
         <div>
           <button onClick={approveUsdcToAave} className="card">
-            Approve USDC for Aave
+            Approve USDC Allowance for Aave
+          </button>
+        </div>
+        <div>
+          <button onClick={checkAllowance} className="card">
+            Check USDC Allowance
+          </button>
+        </div>
+        <div>
+          <button onClick={sendUSDCTransaction} className="card">
+            Send USDC Transaction
           </button>
         </div>
       </div>
