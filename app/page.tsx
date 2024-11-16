@@ -19,6 +19,10 @@ import { AccountAbstractionProvider, SafeSmartAccount } from "@web3auth/account-
 import { FundButton, getOnrampBuyUrl } from "@coinbase/onchainkit/fund";
 import { Unity, useUnityContext } from "react-unity-webgl";
 
+import { storeGameBlob, retrieveGameBlob, initializeNillion } from "./nillion";
+
+import { getAaveInterestProfits } from "./subgraph";
+
 const projectId = "3493580c-c1e2-42e3-9c88-e5e432644331";
 
 import RPC from "./ethersRPC";
@@ -87,6 +91,8 @@ function App() {
   const [onrampBuyUrl, setOnrampBuyUrl] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [gameInput, setGameInput] = useState("");
+  
   const { unityProvider, sendMessage, addEventListener, removeEventListener } = useUnityContext({
     loaderUrl: "build/Build/build.loader.js",
     dataUrl: "build/Build/build.data",
@@ -315,7 +321,7 @@ function App() {
   const showState = async () => {
     const state = await getState();
     uiConsole(state);
-  }
+  };
 
   function uiConsole(...args: any[]): void {
     const el = document.querySelector("#console>p");
@@ -324,6 +330,73 @@ function App() {
       console.log(...args);
     }
   }
+
+  const handleStoreGameBlob = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    if (!gameInput) {
+      uiConsole("Please enter some data to store");
+      return;
+    }
+    try {
+      const signedMessage = await RPC.signMessage(provider);
+      initializeNillion(signedMessage);
+
+      const response = await storeGameBlob(gameInput);
+      uiConsole("Game data stored successfully:", response);
+      setGameInput(""); // Clear input after successful store
+    } catch (error) {
+      console.error("Error in handleStoreGameBlob:", error);
+      uiConsole("Error storing game data:", error);
+    }
+  };
+
+  const handleRetrieveGameBlob = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const signedMessage = await RPC.signMessage(provider);
+      console.log("Signed Message:", signedMessage);
+      initializeNillion(signedMessage);
+
+      const retrievedData = await retrieveGameBlob();
+      console.log("Retrieved Data:", retrievedData);
+
+      if (retrievedData) {
+        localStorage.setItem("gameBlob", JSON.stringify(retrievedData));
+        uiConsole("Retrieved game state:", retrievedData);
+      } else {
+        uiConsole("No data retrieved");
+      }
+    } catch (error) {
+      console.error("Full error details:", error);
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        console.error("Response headers:", error.response.headers);
+      }
+      uiConsole("Error retrieving game state:", error.message);
+    }
+  };
+
+  const getInterestProfits = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const address = await RPC.getAccounts(provider);
+      const profits = await getAaveInterestProfits(address);
+      uiConsole("Aave Interest Profits:", profits);
+    } catch (error) {
+      console.error("Error getting interest profits:", error);
+      uiConsole("Error getting interest profits:", error.message);
+    }
+  };
 
   const loggedInView = (
     <>
@@ -409,6 +482,30 @@ function App() {
         <div>
           <button onClick={getAaveUsdcBalance} className="card">
             Get aUSDC Balance
+          </button>
+        </div>
+        <div className="button-group">
+          <button onClick={getInterestProfits} className="card">
+            Get Interest Profits
+          </button>
+        </div>
+        <div>
+          <div className="input-container">
+            <input
+              type="text"
+              value={gameInput}
+              onChange={(e) => setGameInput(e.target.value)}
+              placeholder="Enter data to store"
+              className="amount-input"
+            />
+            <button onClick={handleStoreGameBlob} className="card">
+              Store Game Data
+            </button>
+          </div>
+        </div>
+        <div>
+          <button onClick={handleRetrieveGameBlob} className="card">
+            Retrieve Game Blob
           </button>
         </div>
       </div>
