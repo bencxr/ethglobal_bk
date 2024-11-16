@@ -127,7 +127,7 @@ function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       sendGameState("UpdateState");
-    }, 500);
+    }, 2000);
     return () => clearInterval(interval);
   }, [loggedIn]);
 
@@ -191,7 +191,6 @@ function App() {
     };
     state.loggedIn = loggedIn;
     if (!loggedIn) {
-      console.log("Not logged in");
       return state;
     }
     if (!provider) {
@@ -213,6 +212,7 @@ function App() {
   ////// END GAME MESSAGING INTEGRATION //////
 
   const login = async () => {
+    if (loggedIn) return;
     // IMP START - Login
     const web3authProvider = await web3auth.connectTo(WALLET_ADAPTERS.AUTH, {
       loginProvider: "google",
