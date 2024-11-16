@@ -66,7 +66,7 @@ const authAdapter = new AuthAdapter({
     network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET, // Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
     uxMode: UX_MODE.POPUP,
     whiteLabel: {
-      appName: "W3A Heroes",
+      appName: "Banana Babies",
       appUrl: "https://web3auth.io",
       logoLight: "https://web3auth.io/images/web3auth-logo.svg",
       logoDark: "https://web3auth.io/images/web3auth-logo---Dark.svg",
@@ -77,6 +77,13 @@ const authAdapter = new AuthAdapter({
       } as WHITE_LABEL_THEME,
       useLogoLoader: true,
     } as WhiteLabelData,
+    loginConfig: {
+      google: {
+        verifier: "Banana Babies",
+        typeOfLogin: "google",
+        clientId: "153058254489-pj5ve0jbfk7e70cqifm9hkq726jmln4e.apps.googleusercontent.com", //use your app client id you got from google
+      },
+    },
   },
   privateKeyProvider,
 });
