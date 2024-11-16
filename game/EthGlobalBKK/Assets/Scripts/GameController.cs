@@ -125,6 +125,7 @@ public class GameController : MonoBehaviour
         Elephant.SetActive(false);
         Monkey.SetActive(true);
         _HUD.TogglePlantationButton(false);
+        _DialogueManager.HideDialogue();
     }
 
     public void GoToHome()
@@ -135,5 +136,11 @@ public class GameController : MonoBehaviour
         Elephant.SetActive(true);
         Monkey.SetActive(false);
         _HUD.TogglePlantationButton(true);
+        _DialogueManager.HideDialogue();
+    }
+
+    public void PromptUserWelcome()
+    {
+        
     }
 }
