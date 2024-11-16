@@ -567,6 +567,9 @@ function App() {
         </div>
         <div>
           <button onClick={fundWalletWithUSDC} className="card action-button">Fund Wallet with USDC</button>
+          <div id="cbonramp-button-container" style={{ visibility: "hidden" }}>
+            <FundButton fundingUrl={onrampBuyUrl} />
+          </div>
         </div>
         <div>
           <button onClick={sendTransaction} className="card action-button">Send Transaction</button>
@@ -669,12 +672,12 @@ function App() {
           />
         </div>
       </div>
-      
+
       <div className="main-container">
         <div className="left-panel">
           <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
         </div>
-        
+
         <div className="right-panel">
           <div id="console" style={{ whiteSpace: "pre-line" }}>
             <p style={{ whiteSpace: "pre-line" }}></p>
