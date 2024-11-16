@@ -1493,6 +1493,9 @@ MonoBehaviour:
   Heart: {fileID: 2300957619323003706, guid: 4fa834f80140c47ddbc0672033997d22, type: 3}
   ElephantHungry: {fileID: 21300000, guid: b398b269b5b28493188e1519742cb726, type: 3}
   ElephantNeutral: {fileID: 21300000, guid: daf8e935d53114c95bc795ed957bba80, type: 3}
+  ElephantBoba: {fileID: 21300000, guid: 77131d4fee1714fc28cd25beca7becae, type: 3}
+  ElephantUkulele: {fileID: 21300000, guid: 34593f537e2584dbd81a1747692ab52c, type: 3}
+  ElephantLaptop: {fileID: 21300000, guid: acd148fb2258f4c1b949b22c71e53376, type: 3}
   _DialogueManager: {fileID: 391738655}
 --- !u!1 &1960777627
 GameObject:
@@ -1929,6 +1932,7 @@ MonoBehaviour:
   Banana: {fileID: 2405864930244180851, guid: da275b3983b3a449aa7603bc3f859ebd, type: 3}
   Jungle: {fileID: 867199630}
   Plantation: {fileID: 1803340691}
+  _Elephant: {fileID: 1862402396}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
