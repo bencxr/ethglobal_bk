@@ -137,6 +137,7 @@ public class DialogueManager : MonoBehaviour
     {
         TextContainer.style.display = DisplayStyle.None;
         ElephantContainer.style.display = DisplayStyle.None;
+        MonkeyContainer.style.display = DisplayStyle.None;
     }
 
     public void PromptLogin()

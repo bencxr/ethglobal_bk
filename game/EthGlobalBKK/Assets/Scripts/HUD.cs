@@ -10,6 +10,7 @@ public class HUD : MonoBehaviour
     VisualElement Bananas;
     Label BananasQty;
     VisualElement Coins;
+    Label CoinsQty;
     VisualElement BananasIcon;
     Button PlantationButton;
     Button HomeButton;
@@ -22,6 +23,7 @@ public class HUD : MonoBehaviour
         BananasIcon = Root.Q<VisualElement>("BananaIcon");
         BananasQty = Root.Q<Label>("BananaQty");
         Coins = Root.Q<VisualElement>("Coins");
+        CoinsQty = Root.Q<Label>("CoinsQty");
         PlantationButton = Root.Q<Button>("PlantationButton");
         HomeButton = Root.Q<Button>("HomeButton");
 
@@ -43,7 +45,7 @@ public class HUD : MonoBehaviour
 
     public void ShowCoins()
     {
-        Bananas.style.display = DisplayStyle.Flex;
+        Coins.style.display = DisplayStyle.Flex;
     }
 
     public void ShowPlantation()
@@ -59,6 +61,11 @@ public class HUD : MonoBehaviour
     public void SetBananas(int numBananas)
     {
         BananasQty.text = numBananas.ToString();
+    }
+
+    public void SetCoins(int numCoins)
+    {
+        CoinsQty.text = numCoins.ToString();
     }
 
     public void GoToPlantation(ClickEvent e)

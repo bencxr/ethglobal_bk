@@ -34,6 +34,7 @@ public class GameController : MonoBehaviour
 {
     public bool IsInPlantation = false;
     public DialogueManager _DialogueManager;
+    public Modal _Modal;
     public GameObject Egg;
     public GameObject Elephant;
     public GameObject Monkey;
@@ -43,6 +44,8 @@ public class GameController : MonoBehaviour
     public GameObject Plantation;
 
     int NumBananas;
+    int NumCoins;
+    int NumBananaTrees;
     LoginResponse LoginSession;
 
     [DllImport("__Internal")]
@@ -141,6 +144,8 @@ public class GameController : MonoBehaviour
 
     public void PromptUserWelcome()
     {
-        
+        _HUD.ShowCoins();
+        _DialogueManager.HideDialogue();
+        _Modal.ShowWelcome();
     }
 }
