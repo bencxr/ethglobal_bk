@@ -42,6 +42,7 @@ public class GameController : MonoBehaviour
     public GameObject Banana;
     public GameObject Jungle;
     public GameObject Plantation;
+    public Elephant _Elephant;
 
     int NumBananas;
     int NumCoins;
@@ -58,7 +59,7 @@ public class GameController : MonoBehaviour
     private static extern void DepositAll ();
 
     [DllImport("__Internal")]
-    private static extern void StoreBlob (int value);
+    private static extern void StoreBlob (string blob);
 
 
     private bool HasLoggedIn = false;
@@ -120,7 +121,7 @@ public class GameController : MonoBehaviour
         #endif
 
         #if UNITY_EDITOR == true
-            string mock = @"{""loggedIn"":true,""gameBlob"":""{\""\""peanuts\"":\""yes\""}"",""user"":{""name"":""Benedict Chan"",""email"":""bencxr@fragnetics.com"",""address"":""0x4F7bb64Ac069Bb3A6a0332d9F8f844a5819daA17""},""balances"":{""base"":0.002,""usdc"":1,""ausdc"":1.000024}}";
+            string mock = @"{""loggedIn"":true,""gameBlob"":""{\""\""peanuts\"":\""yes\""}"",""user"":{""name"":""Benedict Chan"",""email"":""bencxr@fragnetics.com"",""address"":""0x4F7bb64Ac069Bb3A6a0332d9F8f844a5819daA17""},""balances"":{""base"":0.002,""usdc"":1,""ausdc"":3.000024}}";
             LoginEvent(mock);
         #endif
     }
@@ -159,6 +160,7 @@ public class GameController : MonoBehaviour
         Elephant.SetActive(false);
         Monkey.SetActive(true);
         _HUD.TogglePlantationButton(false);
+        _HUD.HideItems();
         _DialogueManager.HideDialogue();
     }
 
@@ -170,7 +172,9 @@ public class GameController : MonoBehaviour
         Elephant.SetActive(true);
         Monkey.SetActive(false);
         _HUD.TogglePlantationButton(true);
+        _HUD.ShowItems();
         _DialogueManager.HideDialogue();
+
     }
 
     public void PromptUserWelcome()
@@ -226,7 +230,34 @@ public class GameController : MonoBehaviour
         _HUD.SetBananas(NumBananas);
         #if UNITY_WEBGL == true && UNITY_EDITOR == false
             Debug.Log("Storing blob amount: " + NumBananas);
-            StoreBlob (NumBananas);
+            StoreBlob (NumBananas.ToString());
         #endif
+    }
+
+    public void DrinkBoba()
+    {
+        if (NumBananas >= 1)
+        {
+            RemoveBananas(1);
+            _Elephant.DrinkBoba();
+        }
+    }
+
+    public void PlayUkulele()
+    {
+        if (NumBananas >= 5)
+        {
+            RemoveBananas(5);
+            _Elephant.PlayUkulele();
+        }
+    }
+
+    public void UseLaptop()
+    {
+        if (NumBananas >= 10)
+        {
+            RemoveBananas(10);
+            _Elephant.UseLaptop();
+        }
     }
 }

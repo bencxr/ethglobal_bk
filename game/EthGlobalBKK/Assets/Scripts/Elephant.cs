@@ -8,6 +8,9 @@ public class Elephant : MonoBehaviour
     public GameObject Heart;
     public Sprite ElephantHungry;
     public Sprite ElephantNeutral;
+    public Sprite ElephantBoba;
+    public Sprite ElephantUkulele;
+    public Sprite ElephantLaptop;
 
     SpriteRenderer _SpriteRenderer;
 
@@ -52,7 +55,21 @@ public class Elephant : MonoBehaviour
 
     void OnMouseDown()
     {
-        if (HungerLevel > 0)
+
+        if (_SpriteRenderer.sprite == ElephantBoba)
+        {
+            _DialogueManager.SetElephantText("Mmmmm so yummy!!");
+        }
+        else if (_SpriteRenderer.sprite == ElephantUkulele)
+        {
+            _DialogueManager.SetElephantText("La di la la laaaaa");
+        }
+        else if (_SpriteRenderer.sprite == ElephantLaptop)
+        {
+            _DialogueManager.SetElephantText("I'm learning about the internet!");
+        }
+
+        else if (HungerLevel > 0)
         {
             _DialogueManager.SetElephantText(HungryText[Random.Range(0, HungryText.Length)]);
         }
@@ -67,5 +84,20 @@ public class Elephant : MonoBehaviour
             }
         }
         
+    }
+
+    public void DrinkBoba()
+    {
+        _SpriteRenderer.sprite = ElephantBoba;
+    }
+
+    public void PlayUkulele()
+    {
+        _SpriteRenderer.sprite = ElephantUkulele;
+    }
+
+    public void UseLaptop()
+    {
+        _SpriteRenderer.sprite = ElephantLaptop;
     }
 }
