@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="Currencies" style="flex-grow: 1; display: flex;">
+        <ui:VisualElement name="Bananas" style="flex-grow: 1; flex-direction: row; align-self: flex-end; max-height: 125px; display: none;">
+            <ui:Label tabindex="-1" text="0" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BananaQty" style="font-size: 32px; -unity-text-align: middle-right; min-height: 125px; max-height: 125px; max-width: none; min-width: 125px; -unity-font-style: bold;" />
+            <ui:VisualElement name="BananaIcon" style="flex-grow: 1; background-image: url(&apos;project://database/Assets/Sprites/Banana.png?fileID=2800000&amp;guid=af632b5816e8b4d2f997154b4bd533e5&amp;type=3#Banana&apos;); height: 250px; width: 125px; max-height: 125px; max-width: 125px;" />
+        </ui:VisualElement>
+        <ui:VisualElement name="Coins" style="flex-grow: 1; flex-direction: row; align-self: flex-end; max-height: 250px; display: none;">
+            <ui:Label tabindex="-1" text="0" parse-escape-sequences="true" display-tooltip-when-elided="true" name="CoinsQty" style="font-size: 32px; -unity-text-align: middle-right; min-height: 125px; max-height: 125px; max-width: none; min-width: 125px; -unity-font-style: bold; color: rgb(0, 0, 0);" />
+            <ui:VisualElement name="CoinsIcon" style="flex-grow: 1; background-image: url(&apos;project://database/Assets/Sprites/coin.png?fileID=2800000&amp;guid=873e54bb75f854824a294d312e27f284&amp;type=3#coin&apos;); height: 125px; width: 125px; max-height: 250px; max-width: 125px; -unity-font-style: normal;">
+                <ui:Button text="&#10;" parse-escape-sequences="true" display-tooltip-when-elided="true" style="background-color: rgba(188, 188, 188, 0); background-image: url(&apos;project://database/Assets/Sprites/Plus.png?fileID=2800000&amp;guid=2eceacac458cf4f89bf21ebe883f578a&amp;type=3#Plus&apos;); height: 50px; position: absolute; bottom: auto; right: 0; top: 0; width: 50px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
