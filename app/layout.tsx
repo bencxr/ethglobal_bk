@@ -8,10 +8,12 @@ export const metadata = {
   title: "banana babies",
   description: "A Tropical Adventure",
   icons: {
-    icon: '/bblogo.png',
-    shortcut: '/bblogo.png',
+    icon: [
+      { url: '/favicon.ico', type: 'image/x-icon' },
+      { url: '/bblogo.png', type: 'image/png' }
+    ],
+    shortcut: '/favicon.ico',
     apple: '/bblogo.png',
-    // For better compatibility with different devices
     other: [
       {
         rel: 'apple-touch-icon',
@@ -38,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" href="/bblogo.png" />
         <link rel="apple-touch-icon" href="/bblogo.png" />
       </head>
