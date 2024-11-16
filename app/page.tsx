@@ -114,6 +114,7 @@ const AAVE_POOL_ADDRESS = "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5"; // Base 
 const USDC_ABI = ["function approve(address spender, uint256 amount) public returns (bool)"];
 const AAVE_POOL_ABI = [
   "function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode) external",
+  "function withdraw(address asset, uint256 amount, address to) external returns (uint256)",
 ];
 
 const AUSDC_ADDRESS = "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB"; // aUSDC on Base
@@ -194,8 +195,30 @@ function App() {
       uiConsole("provider not initialized yet");
       return;
     }
-    const balance = await RPC.getBalance(provider);
-    uiConsole(balance);
+    try {
+      const ethersProvider = new ethers.BrowserProvider(provider);
+      const signer = await ethersProvider.getSigner();
+      const userAddress = await signer.getAddress();
+
+      // Initialize USDC contract
+      const usdcContract = new ethers.Contract(
+        USDC_ADDRESS,
+        ["function balanceOf(address account) external view returns (uint256)"],
+        signer
+      );
+
+      // Get USDC balance
+      const balance = await usdcContract.balanceOf(userAddress);
+
+      // Format balance (USDC has 6 decimals)
+      const formattedBalance = ethers.formatUnits(balance, 6);
+
+      uiConsole("USDC Balance:", formattedBalance);
+      return formattedBalance;
+    } catch (error) {
+      uiConsole("Error getting USDC balance:", error);
+      return null;
+    }
   };
 
   const depositUsdc = async () => {
@@ -338,6 +361,61 @@ function App() {
   };
   // IMP END - Blockchain Calls
 
+  const withdrawFromAave = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const ethersProvider = new ethers.BrowserProvider(provider);
+      const signer = await ethersProvider.getSigner();
+      const userAddress = await signer.getAddress();
+
+      // Get current gas price
+      const feeData = await ethersProvider.getFeeData();
+      if (!feeData.gasPrice) throw new Error("Could not get gas price");
+
+      // Initialize Aave Pool contract
+      const aavePool = new ethers.Contract(AAVE_POOL_ADDRESS, AAVE_POOL_ABI, signer);
+
+      // Amount to withdraw (1 USDC = 1000000 since USDC has 6 decimals)
+      const withdrawAmount = ethers.parseUnits("1", 6);
+
+      // Prepare transaction parameters
+      const withdrawTxParams = {
+        from: userAddress,
+        gasPrice: feeData.gasPrice,
+        gasLimit: 250000n, // Fixed gas limit
+        value: 0n,
+        nonce: await ethersProvider.getTransactionCount(userAddress),
+      };
+
+      // Withdraw from Aave
+      const withdrawTx = await aavePool.withdraw(
+        USDC_ADDRESS, // asset to withdraw
+        withdrawAmount, // amount to withdraw
+        userAddress, // recipient address
+        withdrawTxParams
+      );
+      uiConsole("Withdraw transaction sent:", withdrawTx.hash);
+
+      const receipt = await withdrawTx.wait();
+      uiConsole("Successfully withdrawn USDC from Aave:", receipt.hash);
+    } catch (error: any) {
+      uiConsole("Error withdrawing from Aave:");
+      if (error.error) {
+        uiConsole("Inner error:", error.error);
+      }
+      if (error.transaction) {
+        uiConsole("Transaction:", error.transaction);
+      }
+      if (error.receipt) {
+        uiConsole("Receipt:", error.receipt);
+      }
+      uiConsole("Full error:", error);
+    }
+  };
+
   function uiConsole(...args: any[]): void {
     const el = document.querySelector("#console>p");
     if (el) {
@@ -395,6 +473,11 @@ function App() {
         <div>
           <button onClick={getAaveUsdcBalance} className="card">
             Get aUSDC Balance
+          </button>
+        </div>
+        <div>
+          <button onClick={withdrawFromAave} className="card">
+            Withdraw from Aave
           </button>
         </div>
       </div>
