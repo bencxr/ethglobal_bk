@@ -57,6 +57,9 @@ public class GameController : MonoBehaviour
     [DllImport("__Internal")]
     private static extern void DepositAll ();
 
+    [DllImport("__Internal")]
+    private static extern void StoreBlob (int value);
+
 
     private bool HasLoggedIn = false;
 
@@ -102,8 +105,7 @@ public class GameController : MonoBehaviour
         if (NumBananas > 0)
         {
             Instantiate(Banana, new Vector3(Random.Range(-1f, 1f), 5, 0), Quaternion.identity);
-            NumBananas--;
-            _HUD.SetBananas(NumBananas);
+            RemoveBananas(1);
         }
         
     }
@@ -202,9 +204,29 @@ public class GameController : MonoBehaviour
     {
         while (true) {
             Debug.Log("Generating bananas");
-            NumBananas += NumBananaTrees;
-            _HUD.SetBananas(NumBananas);
+            AddBananas(NumBananaTrees);
             yield return new WaitForSeconds(15);
         } 
+    }
+
+    public void AddBananas(int value)
+    {
+        NumBananas += value;
+        UpdateBananas();
+    }
+
+    public void RemoveBananas(int value)
+    {
+        NumBananas -= value;
+        UpdateBananas();
+    }
+
+    public void UpdateBananas()
+    {
+        _HUD.SetBananas(NumBananas);
+        #if UNITY_WEBGL == true && UNITY_EDITOR == false
+            Debug.Log("Storing blob amount: " + NumBananas);
+            StoreBlob (NumBananas);
+        #endif
     }
 }
