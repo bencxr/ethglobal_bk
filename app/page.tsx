@@ -1,22 +1,12 @@
 /* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable no-console */
-
 "use client";
 
 import { useEffect, useState } from "react";
-// IMP START - Quick Start
-import {
-  ADAPTER_EVENTS,
-  CHAIN_NAMESPACES,
-  IProvider,
-  UX_MODE,
-  WALLET_ADAPTERS,
-  WEB3AUTH_NETWORK,
-} from "@web3auth/base";
+import { ADAPTER_EVENTS, CHAIN_NAMESPACES, IProvider, UX_MODE, WALLET_ADAPTERS, WEB3AUTH_NETWORK } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
 import { AuthAdapter, WHITE_LABEL_THEME, WhiteLabelData } from "@web3auth/auth-adapter";
-import { WalletServicesPlugin } from "@web3auth/wallet-services-plugin";
 import { AccountAbstractionProvider, SafeSmartAccount } from "@web3auth/account-abstraction-provider";
 
 import { FundButton, getOnrampBuyUrl } from "@coinbase/onchainkit/fund";
@@ -24,27 +14,9 @@ import { ethers } from "ethers";
 
 const projectId = "3493580c-c1e2-42e3-9c88-e5e432644331";
 
-const onrampBuyUrl = getOnrampBuyUrl({
-  projectId,
-  addresses: { ["0x0E7EbCf16c35Cb53a8B4a4b57007eBd2791796d0"]: ["base"] },
-  assets: ["USDC"],
-  presetFiatAmount: 20,
-  fiatCurrency: "USD",
-});
-
-// IMP END - Quick Start
-
-// IMP START - Blockchain Calls
 import RPC from "./ethersRPC";
-// import RPC from "./viemRPC";
-// import RPC from "./web3RPC";
-// IMP END - Blockchain Calls
 
-// IMP START - Dashboard Registration
 const clientId = "BFIqnq2jKx4HB0PscxrJW8f_4C287cqgBvbb7ZL2v4YVe3yuAqxFQkuKp6-JuFN0wrZaIrsAEziQaDQq47PHAs8"; // get from https://dashboard.web3auth.io
-// IMP END - Dashboard Registration
-
-// IMP START - Chain Config
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
   chainId: "0x2105",
@@ -55,21 +27,17 @@ const chainConfig = {
   tickerName: "Ethereum",
   logo: "https://icons.llamao.fi/icons/chains/rsz_ethereum.jpg",
 };
-// IMP END - Chain Config
 
 // IMP START - SDK Initialization
 const privateKeyProvider = new EthereumPrivateKeyProvider({ config: { chainConfig } });
-
 const accountAbstractionProvider = new AccountAbstractionProvider({
   config: {
     chainConfig,
     smartAccountInit: new SafeSmartAccount(),
     bundlerConfig: {
-      // Get the pimlico API Key from dashboard.pimlico.io
       url: `https://api.pimlico.io/v2/8453/rpc?apikey=pim_ggWVh99izrsA8rmbSvRNRa`,
     },
     paymasterConfig: {
-      // Get the pimlico API Key from dashboard.pimlico.io
       url: `https://api.pimlico.io/v2/8453/rpc?apikey=pim_ggWVh99izrsA8rmbSvRNRa`,
     },
   },
@@ -82,7 +50,6 @@ const web3auth = new Web3AuthNoModal({
   accountAbstractionProvider,
   useAAWithExternalWallet: true,
 });
-const walletServicesPlugin = new WalletServicesPlugin();
 
 const authAdapter = new AuthAdapter({
   adapterSettings: {
@@ -105,8 +72,6 @@ const authAdapter = new AuthAdapter({
   privateKeyProvider,
 });
 web3auth.configureAdapter(authAdapter);
-
-web3auth.addPlugin(walletServicesPlugin);
 // IMP END - SDK Initialization
 
 const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
@@ -126,9 +91,28 @@ const AUSDC_ABI = [
 function App() {
   const [provider, setProvider] = useState<IProvider | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [onrampBuyUrl, setOnrampBuyUrl] = useState("");
 
-  web3auth.addListener(ADAPTER_EVENTS.CONNECTED, () => {
+  const generateOnrampBuyUrl = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    const address = await RPC.getAccounts(provider);
+    uiConsole(address);
+    const onrampBuyUrl = getOnrampBuyUrl({
+      projectId,
+      addresses: { [address]: ['base'] },
+      assets: ['USDC'],
+      presetFiatAmount: 20,
+      fiatCurrency: 'USD'
+    });
+    setOnrampBuyUrl(onrampBuyUrl);
+  }
+
+  web3auth.addListener(ADAPTER_EVENTS.CONNECTED, async () => {
     setLoggedIn(true);
+    generateOnrampBuyUrl();
   });
 
   useEffect(() => {
@@ -141,7 +125,7 @@ function App() {
 
         if (web3auth.connected) {
           setLoggedIn(true);
-          // Add the plugin to web3auth
+          generateOnrampBuyUrl();
         }
       } catch (error) {
         console.error(error);
@@ -150,17 +134,6 @@ function App() {
 
     init();
   }, []);
-
-  const showCheckout = () => {
-    console.log(walletServicesPlugin.status);
-    if (walletServicesPlugin.status === "connected") {
-      walletServicesPlugin.showCheckout({
-        show: true,
-        fiatList: ["USD"],
-        tokenList: ["USDC"],
-      });
-    }
-  };
 
   const login = async () => {
     // IMP START - Login
@@ -414,6 +387,9 @@ function App() {
       }
       uiConsole("Full error:", error);
     }
+    
+  const fundWalletWithUSDC = async () => {
+    document.getElementById("cbonramp-button-container").children[0].click()
   };
 
   function uiConsole(...args: any[]): void {
@@ -452,8 +428,13 @@ function App() {
             Send Transaction
           </button>
         </div>
-        <div id="cbonramp-button-container">
-          <FundButton fundingUrl={onrampBuyUrl} />
+        <div>
+          <button onClick={fundWalletWithUSDC} className="card">
+            Fund Wallet with USDC
+          </button>
+          <div id="cbonramp-button-container" style={{ visibility: "hidden" }}>
+            <FundButton fundingUrl={onrampBuyUrl} />
+          </div>
         </div>
         <div>
           <button onClick={logout} className="card">
