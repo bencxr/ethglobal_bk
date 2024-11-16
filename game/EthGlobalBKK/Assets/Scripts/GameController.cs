@@ -4,6 +4,31 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Runtime.InteropServices;
 
+[System.Serializable]
+public class LoginResponse
+{
+    public bool loggedIn;
+    public string gameBlob;
+    public UserInfo user;
+    public Balances balances;
+}
+
+[System.Serializable]
+public class UserInfo
+{
+    public string name;
+    public string email;
+    public string address;
+}
+
+[System.Serializable]
+public class Balances
+{
+    public double @base;  // Using @ because 'base' is a C# keyword
+    public double usdc;
+    public double ausdc;
+}
+
 public class GameController : MonoBehaviour
 {
     public DialogueManager _DialogueManager;
@@ -13,6 +38,7 @@ public class GameController : MonoBehaviour
     public GameObject Banana;
 
     int NumBananas;
+    LoginResponse LoginSession;
 
     [DllImport("__Internal")]
     private static extern void PromptLogin ();
@@ -66,11 +92,23 @@ public class GameController : MonoBehaviour
         #if UNITY_WEBGL == true && UNITY_EDITOR == false
             PromptLogin ();
         #endif
+
+        string mock = @"{""loggedIn"":true,""gameBlob"":""{\""\""peanuts\"":\""yes\""}"",""user"":{""name"":""Benedict Chan"",""email"":""bencxr@fragnetics.com"",""address"":""0x4F7bb64Ac069Bb3A6a0332d9F8f844a5819daA17""},""balances"":{""base"":0.002,""usdc"":1,""ausdc"":1.000024}}";
+        LoginEvent(mock);
     }
 
     public void PromptPlantation()
     {
-        _DialogueManager.SetMainText("Lets go to the plantation and get some bananas!");
+        _DialogueManager.SetMainText($"Hi {LoginSession.user.name.Split(" ")[0]}, you're out of bananas. Let's go get more.");
         _HUD.ShowPlantation();
+    }
+
+    public void LoginEvent(string json)
+    {   
+        Debug.Log("Login Event: " + json);
+        LoginSession = JsonUtility.FromJson<LoginResponse>(json);
+        Debug.Log($"User logged in: {LoginSession.user.name} with address: {LoginSession.user.address}");
+
+        PromptPlantation();
     }
 }
