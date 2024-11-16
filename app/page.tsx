@@ -121,15 +121,22 @@ function App() {
   });
 
   useEffect(() => {
-    sendGameState();
+    sendGameState("LoginEvent");
   }, [loggedIn]);
 
-  const sendGameState = async () => {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      sendGameState("UpdateState");
+    }, 500);
+    return () => clearInterval(interval);
+  }, [loggedIn]);
+
+  const sendGameState = async (eventName: string) => {
     const state = await getState();
 
     console.log("Sending Game State");
     console.log(state);
-    sendMessage("GameController", "LoginEvent", JSON.stringify(state));
+    sendMessage("GameController", eventName, JSON.stringify(state));
   }
 
   useEffect(() => {
@@ -156,7 +163,9 @@ function App() {
    * methods that deal with game integration
    */
   addEventListener("PromptLogin", () => { login(); });
-  addEventListener("GetState", () => { sendGameState(); });
+  addEventListener("PromptFunding", () => { fundWalletWithUSDC(); });
+  addEventListener("DepositAll", () => { depositUsdc(); });
+  addEventListener("GetState", () => { sendGameState("UpdateState"); });
   addEventListener("StoreBlob", useCallback((blob) => {
     storeGameBlob(blob);
   }, []));
@@ -168,7 +177,7 @@ function App() {
   const getState = async () => {
     let state = {
       loggedIn: false,
-      gameBlob: {},
+      gameBlob: "",
       user: {
         name: "",
         email: "",
@@ -189,7 +198,7 @@ function App() {
       uiConsole("provider not initialized yet");
       return state;
     }
-    state.gameBlob = JSON.parse(localStorage.getItem("gameBlob") || "{}");
+    state.gameBlob = localStorage.getItem("gameBlob") || "{}";
     state.user.address = await RPC.getAccounts(provider);
     const user = await web3auth.getUserInfo();
     state.user.name = user.name;
@@ -229,7 +238,7 @@ function App() {
     setProvider(null);
     setLoggedIn(false);
     uiConsole("logged out");
-    sendGameState();
+    sendGameState("LogoutEvent");
   };
 
   const getUsdcBalance = async () => {
@@ -242,15 +251,15 @@ function App() {
   };
 
   const depositUsdc = async () => {
+    let amountToDeposit = depositAmount;
     if (!provider) {
       uiConsole("provider not initialized yet");
       return;
     }
-    if (!depositAmount || isNaN(Number(depositAmount))) {
-      uiConsole("Please enter a valid amount");
-      return;
+    if (!amountToDeposit || isNaN(Number(amountToDeposit))) {
+      amountToDeposit = await RPC.getUsdcBalance(provider) || "0";
     }
-    const receipt = await RPC.depositUsdc(provider, depositAmount);
+    const receipt = await RPC.depositUsdc(provider, amountToDeposit);
     uiConsole("Deposit result:", receipt);
     setDepositAmount(""); // Reset input after deposit
   };
