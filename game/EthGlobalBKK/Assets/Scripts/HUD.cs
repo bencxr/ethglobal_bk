@@ -144,6 +144,7 @@ public class HUD : MonoBehaviour
 
     public void ConfirmDepost(ClickEvent e)
     {
+        Debug.Log("ConfirmDepost");
         GameController.ConfirmDepost();
     }
 

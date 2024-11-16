@@ -6,7 +6,12 @@ public class Monkey : MonoBehaviour
 {
     public GameController _GameController;
     public DialogueManager _DialogueManager;
+    private int DialogueStep = 0;
 
+    string[] MonkeyText = new string[] {
+        "I'm trying to grow my Banana Farm. Can you help?",
+        "Click on the Coin icon to load some coins.",
+        "Spend the coins to grow trees, which produce bananas!"};
 
     // Start is called before the first frame update
     void Start()
@@ -22,6 +27,7 @@ public class Monkey : MonoBehaviour
 
     void OnMouseDown()
     {
-        _DialogueManager.SetMonkeyText("I'm trying to grow my Banana farm. Can you help?");
+        _DialogueManager.SetMonkeyText(MonkeyText[DialogueStep%3]);
+        DialogueStep++;
     }
 }
