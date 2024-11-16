@@ -353,7 +353,7 @@ function App() {
     }
   }
 
-  const handleStoreGameBlob = async (blob: string) => {
+  const handleStoreGameBlob = useCallback(async (blob: string) => {
     if (!provider) {
       uiConsole("provider not initialized yet");
       return;
@@ -376,8 +376,16 @@ function App() {
       console.error("Error in handleStoreGameBlob:", error);
       uiConsole("Error storing game data:", error);
     }
-  };
-  addEventListener("StoreBlob", useCallback((blob) => { handleStoreGameBlob(blob); }, [provider, handleStoreGameBlob]));
+  }, [provider, gameInput, uiConsole]);
+
+  const handleStoreBlobFromGame = useCallback((blob: any) => {
+    console.log("StoreBlob event received:", blob);
+    handleStoreGameBlob(blob);
+  }, [handleStoreGameBlob]);
+  useEffect(() => {
+    addEventListener("StoreBlob", handleStoreBlobFromGame);
+    return () => removeEventListener("StoreBlob", handleStoreBlobFromGame);
+  }, [handleStoreGameBlob]);
 
   const handleRetrieveGameBlob = async () => {
     if (!provider) {
