@@ -21,8 +21,6 @@ import { Unity, useUnityContext } from "react-unity-webgl";
 
 import { storeGameBlob, retrieveGameBlob, initializeNillion } from "./nillion";
 
-import { getAaveInterestProfits } from "./subgraph";
-
 const projectId = "3493580c-c1e2-42e3-9c88-e5e432644331";
 
 import RPC from "./ethersRPC";
@@ -92,7 +90,7 @@ function App() {
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [gameInput, setGameInput] = useState("");
-  
+
   const { unityProvider, sendMessage, addEventListener, removeEventListener } = useUnityContext({
     loaderUrl: "build/Build/build.loader.js",
     dataUrl: "build/Build/build.data",
@@ -390,7 +388,7 @@ function App() {
     }
     try {
       const address = await RPC.getAccounts(provider);
-      const profits = await getAaveInterestProfits(address);
+
       uiConsole("Aave Interest Profits:", profits);
     } catch (error) {
       console.error("Error getting interest profits:", error);
