@@ -32,11 +32,15 @@ public class Balances
 
 public class GameController : MonoBehaviour
 {
+    public bool IsInPlantation = false;
     public DialogueManager _DialogueManager;
     public GameObject Egg;
     public GameObject Elephant;
+    public GameObject Monkey;
     public HUD _HUD;
     public GameObject Banana;
+    public GameObject Jungle;
+    public GameObject Plantation;
 
     int NumBananas;
     LoginResponse LoginSession;
@@ -115,6 +119,21 @@ public class GameController : MonoBehaviour
 
     public void GoToPlantation()
     {
-        SceneManager.LoadScene (sceneName:"Plantation");
+        IsInPlantation = true;
+        Jungle.SetActive(false);
+        Plantation.SetActive(true);
+        Elephant.SetActive(false);
+        Monkey.SetActive(true);
+        _HUD.TogglePlantationButton(false);
+    }
+
+    public void GoToHome()
+    {
+        IsInPlantation = false;
+        Jungle.SetActive(true);
+        Plantation.SetActive(false);
+        Elephant.SetActive(true);
+        Monkey.SetActive(false);
+        _HUD.TogglePlantationButton(true);
     }
 }

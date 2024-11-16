@@ -12,6 +12,7 @@ public class HUD : MonoBehaviour
     VisualElement Coins;
     VisualElement BananasIcon;
     Button PlantationButton;
+    Button HomeButton;
 
     // Start is called before the first frame update
     void Start()
@@ -22,9 +23,11 @@ public class HUD : MonoBehaviour
         BananasQty = Root.Q<Label>("BananaQty");
         Coins = Root.Q<VisualElement>("Coins");
         PlantationButton = Root.Q<Button>("PlantationButton");
+        HomeButton = Root.Q<Button>("HomeButton");
 
         BananasIcon.RegisterCallback<ClickEvent>(FeedElephant);
         PlantationButton.RegisterCallback<ClickEvent>(GoToPlantation);
+        HomeButton.RegisterCallback<ClickEvent>(GoToHome);
     }
 
     // Update is called once per frame
@@ -61,5 +64,24 @@ public class HUD : MonoBehaviour
     public void GoToPlantation(ClickEvent e)
     {
         GameController.GoToPlantation();
+    }
+
+    public void GoToHome(ClickEvent e)
+    {
+        GameController.GoToHome();
+    }
+
+    public void TogglePlantationButton(bool show)
+    {
+        if (show)
+        {
+            PlantationButton.style.display = DisplayStyle.Flex;
+            HomeButton.style.display = DisplayStyle.None;
+        }
+        else
+        {
+            PlantationButton.style.display = DisplayStyle.None;
+            HomeButton.style.display = DisplayStyle.Flex;
+        }
     }
 }
