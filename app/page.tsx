@@ -5,26 +5,31 @@
 
 import { useEffect, useState } from "react";
 // IMP START - Quick Start
-import { ADAPTER_EVENTS, CHAIN_NAMESPACES, IProvider, UX_MODE, WALLET_ADAPTERS, WEB3AUTH_NETWORK } from "@web3auth/base";
+import {
+  ADAPTER_EVENTS,
+  CHAIN_NAMESPACES,
+  IProvider,
+  UX_MODE,
+  WALLET_ADAPTERS,
+  WEB3AUTH_NETWORK,
+} from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
 import { AuthAdapter, WHITE_LABEL_THEME, WhiteLabelData } from "@web3auth/auth-adapter";
 import { WalletServicesPlugin } from "@web3auth/wallet-services-plugin";
-import {
-  AccountAbstractionProvider,
-  SafeSmartAccount,
-} from "@web3auth/account-abstraction-provider";
+import { AccountAbstractionProvider, SafeSmartAccount } from "@web3auth/account-abstraction-provider";
 
-import { FundButton, getOnrampBuyUrl } from '@coinbase/onchainkit/fund';
+import { FundButton, getOnrampBuyUrl } from "@coinbase/onchainkit/fund";
+import { ethers } from "ethers";
 
-const projectId = '3493580c-c1e2-42e3-9c88-e5e432644331';
+const projectId = "3493580c-c1e2-42e3-9c88-e5e432644331";
 
 const onrampBuyUrl = getOnrampBuyUrl({
   projectId,
-  addresses: { ["0x0E7EbCf16c35Cb53a8B4a4b57007eBd2791796d0"]: ['base'] },
-  assets: ['USDC'],
+  addresses: { ["0x0E7EbCf16c35Cb53a8B4a4b57007eBd2791796d0"]: ["base"] },
+  assets: ["USDC"],
   presetFiatAmount: 20,
-  fiatCurrency: 'USD'
+  fiatCurrency: "USD",
 });
 
 // IMP END - Quick Start
@@ -75,7 +80,7 @@ const web3auth = new Web3AuthNoModal({
   web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
   privateKeyProvider,
   accountAbstractionProvider,
-  useAAWithExternalWallet: true
+  useAAWithExternalWallet: true,
 });
 const walletServicesPlugin = new WalletServicesPlugin();
 
@@ -103,6 +108,19 @@ web3auth.configureAdapter(authAdapter);
 
 web3auth.addPlugin(walletServicesPlugin);
 // IMP END - SDK Initialization
+
+const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"; // Base USDC
+const AAVE_POOL_ADDRESS = "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5"; // Base Aave V3 Pool
+const USDC_ABI = ["function approve(address spender, uint256 amount) public returns (bool)"];
+const AAVE_POOL_ABI = [
+  "function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode) external",
+];
+
+const AUSDC_ADDRESS = "0x4e65fE4DbA92790696d040ac24Aa414708F5c0AB"; // aUSDC on Base
+const AUSDC_ABI = [
+  "function balanceOf(address account) external view returns (uint256)",
+  "function decimals() external view returns (uint8)",
+];
 
 function App() {
   const [provider, setProvider] = useState<IProvider | null>(null);
@@ -169,6 +187,115 @@ function App() {
     setProvider(null);
     setLoggedIn(false);
     uiConsole("logged out");
+  };
+
+  const getUsdcBalance = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    const balance = await RPC.getBalance(provider);
+    uiConsole(balance);
+  };
+
+  const depositUsdc = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const ethersProvider = new ethers.BrowserProvider(provider);
+      const signer = await ethersProvider.getSigner();
+      const userAddress = await signer.getAddress();
+
+      // Get current gas price
+      const feeData = await ethersProvider.getFeeData();
+      if (!feeData.gasPrice) throw new Error("Could not get gas price");
+
+      // Initialize USDC contract
+      const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+
+      // Amount to deposit (1 USDC)
+      const depositAmount = ethers.parseUnits("1", 6);
+
+      // Prepare transaction parameters (removed 'to' field)
+      const approveTxParams = {
+        from: userAddress,
+        gasPrice: feeData.gasPrice,
+        gasLimit: 100000n, // Fixed gas limit
+        value: 0n,
+        nonce: await ethersProvider.getTransactionCount(userAddress),
+      };
+
+      // Approve USDC spending
+      const approveTx = await usdcContract.approve(AAVE_POOL_ADDRESS, depositAmount, approveTxParams);
+      uiConsole("Approval transaction sent:", approveTx.hash);
+
+      const approveReceipt = await approveTx.wait();
+      uiConsole("USDC approved for Aave:", approveReceipt.hash);
+
+      // Initialize Aave Pool contract
+      const aavePool = new ethers.Contract(AAVE_POOL_ADDRESS, AAVE_POOL_ABI, signer);
+
+      // Prepare supply transaction parameters (removed 'to' field)
+      const supplyTxParams = {
+        from: userAddress,
+        gasPrice: feeData.gasPrice,
+        gasLimit: 250000n, // Fixed gas limit
+        value: 0n,
+        nonce: await ethersProvider.getTransactionCount(userAddress),
+      };
+
+      // Supply to Aave
+      const depositTx = await aavePool.supply(USDC_ADDRESS, depositAmount, userAddress, 0, supplyTxParams);
+      uiConsole("Supply transaction sent:", depositTx.hash);
+
+      const receipt = await depositTx.wait();
+      uiConsole("Successfully deposited USDC to Aave:", receipt.hash);
+    } catch (error: any) {
+      // More detailed error logging
+      uiConsole("Error depositing USDC:");
+      if (error.error) {
+        uiConsole("Inner error:", error.error);
+      }
+      if (error.transaction) {
+        uiConsole("Transaction:", error.transaction);
+      }
+      if (error.receipt) {
+        uiConsole("Receipt:", error.receipt);
+      }
+      uiConsole("Full error:", error);
+    }
+  };
+
+  const getAaveUsdcBalance = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const ethersProvider = new ethers.BrowserProvider(provider);
+      const signer = await ethersProvider.getSigner();
+      const userAddress = await signer.getAddress();
+
+      // Get the checksummed address
+      const checksummedAddress = ethers.getAddress(AUSDC_ADDRESS);
+
+      // Initialize aUSDC contract with checksummed address
+      const aUsdcContract = new ethers.Contract(checksummedAddress, AUSDC_ABI, signer);
+
+      // Get balance
+      const balance = await aUsdcContract.balanceOf(userAddress);
+
+      // Format balance (aUSDC has 6 decimals like USDC)
+      const formattedBalance = ethers.formatUnits(balance, 6);
+
+      uiConsole("aUSDC Balance:", formattedBalance);
+      return formattedBalance;
+    } catch (error) {
+      uiConsole("Error getting aUSDC balance:", error);
+      return null;
+    }
   };
 
   // IMP START - Blockchain Calls
@@ -253,6 +380,21 @@ function App() {
         <div>
           <button onClick={logout} className="card">
             Log Out
+          </button>
+        </div>
+        <div>
+          <button onClick={getUsdcBalance} className="card">
+            Get USDC Balance
+          </button>
+        </div>
+        <div>
+          <button onClick={depositUsdc} className="card">
+            Deposit USDC into Aave
+          </button>
+        </div>
+        <div>
+          <button onClick={getAaveUsdcBalance} className="card">
+            Get aUSDC Balance
           </button>
         </div>
       </div>
