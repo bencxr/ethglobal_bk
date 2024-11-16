@@ -479,6 +479,20 @@ function App() {
     }
   };
 
+  const approveUsdcToAave = async () => {
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return;
+    }
+    try {
+      const receipt = await RPC.approveUsdcToAave(provider);
+      uiConsole("USDC Approval successful:", receipt);
+    } catch (error) {
+      console.error("USDC Approval failed:", error);
+      uiConsole("USDC Approval failed:", error);
+    }
+  };
+
   const loggedInView = (
     <>
       <div className="flex-container">
@@ -597,6 +611,11 @@ function App() {
         <div>
           <button onClick={getTransactionHistory} className="card">
             View Transaction History
+          </button>
+        </div>
+        <div>
+          <button onClick={approveUsdcToAave} className="card">
+            Approve USDC for Aave
           </button>
         </div>
       </div>
