@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ADAPTER_EVENTS,
   CHAIN_NAMESPACES,
@@ -17,7 +17,7 @@ import { AuthAdapter, WHITE_LABEL_THEME, WhiteLabelData } from "@web3auth/auth-a
 import { AccountAbstractionProvider, SafeSmartAccount } from "@web3auth/account-abstraction-provider";
 
 import { FundButton, getOnrampBuyUrl } from "@coinbase/onchainkit/fund";
-import { ethers } from "ethers";
+import { Unity, useUnityContext } from "react-unity-webgl";
 
 import { storeGameBlob, retrieveGameBlob, initializeNillion } from "./nillion";
 
@@ -66,7 +66,7 @@ const authAdapter = new AuthAdapter({
   adapterSettings: {
     clientId, //Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
     network: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET, // Optional - Provide only if you haven't provided it in the Web3Auth Instantiation Code
-    uxMode: UX_MODE.REDIRECT,
+    uxMode: UX_MODE.POPUP,
     whiteLabel: {
       appName: "W3A Heroes",
       appUrl: "https://web3auth.io",
@@ -92,6 +92,13 @@ function App() {
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [gameInput, setGameInput] = useState("");
+  
+  const { unityProvider, sendMessage, addEventListener, removeEventListener } = useUnityContext({
+    loaderUrl: "build/Build/build.loader.js",
+    dataUrl: "build/Build/build.data",
+    frameworkUrl: "build/Build/build.framework.js",
+    codeUrl: "build/Build/build.wasm",
+  });
 
   const generateOnrampBuyUrl = async () => {
     if (!provider) {
@@ -116,6 +123,18 @@ function App() {
   });
 
   useEffect(() => {
+    sendGameState();
+  }, [loggedIn]);
+
+  const sendGameState = async () => {
+    const state = await getState();
+
+    console.log("Sending Game State");
+    console.log(state);
+    sendMessage("GameController", "LoginEvent", JSON.stringify(state));
+  }
+
+  useEffect(() => {
     const init = async () => {
       try {
         // IMP START - SDK Initialization
@@ -134,6 +153,57 @@ function App() {
 
     init();
   }, []);
+
+  /**
+   * methods that deal with game integration
+   */
+  addEventListener("PromptLogin", () => { login(); });
+  addEventListener("GetState", () => { sendGameState(); });
+  addEventListener("StoreBlob", useCallback((blob) => {
+    storeGameBlob(blob);
+  }, []));
+
+  const storeGameBlob = async (blob: string) => {
+    localStorage.setItem("gameBlob", blob);
+  }
+
+  const getState = async () => {
+    let state = {
+      loggedIn: false,
+      gameBlob: {},
+      user: {
+        name: "",
+        email: "",
+        address: "0x"
+      },
+      balances: {
+        base: 0,
+        usdc: 0,
+        ausdc: 0
+      }
+    };
+    state.loggedIn = loggedIn;
+    if (!loggedIn) {
+      console.log("Not logged in");
+      return state;
+    }
+    if (!provider) {
+      uiConsole("provider not initialized yet");
+      return state;
+    }
+    state.gameBlob = JSON.parse(localStorage.getItem("gameBlob") || "{}");
+    state.user.address = await RPC.getAccounts(provider);
+    const user = await web3auth.getUserInfo();
+    state.user.name = user.name;
+    state.user.email = user.email;
+
+    state.balances.base = Number(await RPC.getBalance(provider));
+    state.balances.usdc = Number(await RPC.getUsdcBalance(provider));
+    state.balances.ausdc = Number(await RPC.getAaveUsdcBalance(provider));
+
+    return state;
+  }
+  ////// END GAME MESSAGING INTEGRATION //////
 
   const login = async () => {
     // IMP START - Login
@@ -161,6 +231,7 @@ function App() {
     setProvider(null);
     setLoggedIn(false);
     uiConsole("logged out");
+    sendGameState();
   };
 
   const getUsdcBalance = async () => {
@@ -245,42 +316,6 @@ function App() {
 
   const fundWalletWithUSDC = async () => {
     document.getElementById("cbonramp-button-container").children[0].click();
-  };
-
-  const getState = async () => {
-    let state = {
-      loggedIn: false,
-      gameBlob: {},
-      user: {
-        name: "",
-        email: "",
-        address: "0x",
-      },
-      balances: {
-        base: 0,
-        usdc: 0,
-        ausdc: 0,
-      },
-    };
-    state.loggedIn = loggedIn;
-    if (!loggedIn) {
-      return state;
-    }
-    if (!provider) {
-      uiConsole("provider not initialized yet");
-      return state;
-    }
-    state.gameBlob = JSON.parse(localStorage.getItem("gameBlob") || "{}");
-    state.user.address = await RPC.getAccounts(provider);
-    const user = await web3auth.getUserInfo();
-    state.user.name = user.name;
-    state.user.email = user.email;
-
-    state.balances.base = Number(await RPC.getBalance(provider));
-    state.balances.usdc = Number(await RPC.getUsdcBalance(provider));
-    state.balances.ausdc = Number(await RPC.getAaveUsdcBalance(provider));
-
-    return state;
   };
 
   const showState = async () => {
@@ -485,13 +520,10 @@ function App() {
 
   return (
     <div className="container">
-      <h1 className="title">
-        <a target="_blank" href="https://web3auth.io/docs/sdk/pnp/web/no-modal" rel="noreferrer">
-          Web3Auth{" "}
-        </a>
-        & NextJS Quick Start
-      </h1>
-
+      <Unity unityProvider={unityProvider} style={{
+        width: '300px',
+        height: '650px',
+      }} />
       <div className="grid">{loggedIn ? loggedInView : unloggedInView}</div>
       <div id="console" style={{ whiteSpace: "pre-line" }}>
         <p style={{ whiteSpace: "pre-line" }}></p>
