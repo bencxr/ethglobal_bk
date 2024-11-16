@@ -10,6 +10,8 @@
   },
   "//IMP START": "IMP START - Web3Auth Installation",
   "dependencies": {
+    "@coinbase/onchainkit": "^0.35.5",
+    "@web3auth/account-abstraction-provider": "^9.4.0",
     "@web3auth/auth-adapter": "^9.4.0",
     "@web3auth/base": "^9.4.0",
     "@web3auth/ethereum-provider": "^9.4.0",

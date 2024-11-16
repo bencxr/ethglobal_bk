@@ -5,11 +5,27 @@
 
 import { useEffect, useState } from "react";
 // IMP START - Quick Start
-import { CHAIN_NAMESPACES, IProvider, UX_MODE, WALLET_ADAPTERS, WEB3AUTH_NETWORK } from "@web3auth/base";
+import { ADAPTER_EVENTS, CHAIN_NAMESPACES, IProvider, UX_MODE, WALLET_ADAPTERS, WEB3AUTH_NETWORK } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
 import { AuthAdapter, WHITE_LABEL_THEME, WhiteLabelData } from "@web3auth/auth-adapter";
 import { WalletServicesPlugin } from "@web3auth/wallet-services-plugin";
+import {
+  AccountAbstractionProvider,
+  SafeSmartAccount,
+} from "@web3auth/account-abstraction-provider";
+
+import { FundButton, getOnrampBuyUrl } from '@coinbase/onchainkit/fund';
+
+const projectId = '3493580c-c1e2-42e3-9c88-e5e432644331';
+
+const onrampBuyUrl = getOnrampBuyUrl({
+  projectId,
+  addresses: { ["0x0E7EbCf16c35Cb53a8B4a4b57007eBd2791796d0"]: ['base'] },
+  assets: ['USDC'],
+  presetFiatAmount: 20,
+  fiatCurrency: 'USD'
+});
 
 // IMP END - Quick Start
 
@@ -39,10 +55,27 @@ const chainConfig = {
 // IMP START - SDK Initialization
 const privateKeyProvider = new EthereumPrivateKeyProvider({ config: { chainConfig } });
 
+const accountAbstractionProvider = new AccountAbstractionProvider({
+  config: {
+    chainConfig,
+    smartAccountInit: new SafeSmartAccount(),
+    bundlerConfig: {
+      // Get the pimlico API Key from dashboard.pimlico.io
+      url: `https://api.pimlico.io/v2/8453/rpc?apikey=pim_ggWVh99izrsA8rmbSvRNRa`,
+    },
+    paymasterConfig: {
+      // Get the pimlico API Key from dashboard.pimlico.io
+      url: `https://api.pimlico.io/v2/8453/rpc?apikey=pim_ggWVh99izrsA8rmbSvRNRa`,
+    },
+  },
+});
+
 const web3auth = new Web3AuthNoModal({
   clientId,
   web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
   privateKeyProvider,
+  accountAbstractionProvider,
+  useAAWithExternalWallet: true
 });
 const walletServicesPlugin = new WalletServicesPlugin();
 
@@ -74,6 +107,10 @@ web3auth.addPlugin(walletServicesPlugin);
 function App() {
   const [provider, setProvider] = useState<IProvider | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
+
+  web3auth.addListener(ADAPTER_EVENTS.CONNECTED, () => {
+    setLoggedIn(true);
+  });
 
   useEffect(() => {
     const init = async () => {
@@ -210,10 +247,8 @@ function App() {
             Send Transaction
           </button>
         </div>
-        <div>
-          <button onClick={showCheckout} className="card">
-            Onramp
-          </button>
+        <div id="cbonramp-button-container">
+          <FundButton fundingUrl={onrampBuyUrl} />
         </div>
         <div>
           <button onClick={logout} className="card">
