@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
+/* eslint-disable no-console */
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
